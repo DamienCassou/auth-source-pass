@@ -33,15 +33,15 @@
 (require 'cl-macs)
 (require 'auth-source)
 
-(defvar pass-backend
+(defvar auth-pass-backend
   (auth-source-backend "password-store"
                            :source "."
                            :type 'password-store
-                           :search-function #'pass-auth-search)
+                           :search-function #'auth-pass-search)
   "Auth-source backend for password-store.")
 
 ;; search password store for a password matching the parameters
-(cl-defun pass-auth-search (&rest
+(cl-defun auth-pass-search (&rest
                             spec
                             &key backend require create delete
                             type max host user port
@@ -58,9 +58,9 @@ See `auth-source-search' for details on SPEC."
 ;; into an advice)
 (defun auth-source-backend-parse (entry)
   (auth-source-backend-parse-parameters entry
-                                        pass-backend))
+                                        auth-pass-backend))
 
-;; clear the cache (required after each change to #'pass-auth-search)
+;; clear the cache (required after each change to #'auth-pass-search)
 (auth-source-forget-all-cached)
 
 ;; try to search a user and password for given host and port
