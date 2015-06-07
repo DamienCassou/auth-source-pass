@@ -1,9 +1,13 @@
-;;; auth-password-store.el --- Integrate Emacs' auth-source with password-store
+;;; auth-password-store.el --- Integrate auth-source with password-store -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 Damien Cassou
 
-;; Author: Damien Cassou <damien.cassou@gmail.com>
+;; Author: Damien Cassou <damien@cassou.me>
 ;; Version: 0.1
+;; GIT: https://github.com/DamienCassou/auth-password-store
+;; Package-Requires: ((emacs "24") (password-store "0.1"))
+;; Created: 07 Jun 2015
+;; Keywords: pass password-store auth-source username password login
 
 ;; This file is not part of GNU Emacs.
 
@@ -25,6 +29,45 @@
 ;; Integrate Emacs' auth-source with password-store
 
 ;;; Code:
+(require 'cl-lib)
+(require 'cl-macs)
+(require 'auth-source)
+
+;; search password store for a password matching the parameters
+(cl-defun pass-auth-search (&rest
+                            spec
+                            &key backend require create delete
+                            type max host user port
+                            &allow-other-keys)
+  "Given a property list SPEC, return search matches from the :backend.
+See `auth-source-search' for details on SPEC."
+  (assert (or (null type) (eq type (oref backend type)))
+          t "Invalid password-store search: %s %s")
+
+  `(:host ,host :port ,port :user "bfoo" :secret ,(lambda () "the secret in a function")))
+
+;; define the password store backend
+(setq pass-backend
+      (auth-source-backend "password-store"
+                           :source "."
+                           :type 'password-store
+                           :search-function #'pass-auth-search))
+
+;; override this function to make it work (if you evaluate this, you
+;; won't be able to use Emacs anymore, we really need to change that
+;; into an advice)
+(defun auth-source-backend-parse (entry)
+  (auth-source-backend-parse-parameters entry
+                                        pass-backend))
+
+;; clear the cache (required after each change to #'pass-auth-search)
+(auth-source-forget-all-cached)
+
+;; try to search a user and password for given host and port
+(setq myauth (auth-source-search :max 1
+                                 :host "smtps.univ-lille1.fr"
+                                 :port "587"
+                                 :require '(:user :secret)))
 
 
 
