@@ -98,9 +98,10 @@ key2: value2"
   "Return an alist of the data associated with ENTRY.
 
 ENTRY is the name of a password-store entry."
-  (let ((file-contents (password-store--run-show entry)))
-    (cons `(secret . ,(auth-pass--parse-secret file-contents))
-          (auth-pass--parse-data file-contents))))
+  (let ((file-contents (ignore-errors (password-store--run-show entry))))
+    (and file-contents
+         (cons `(secret . ,(auth-pass--parse-secret file-contents))
+               (auth-pass--parse-data file-contents)))))
 
 (defun auth-pass--parse-secret (contents)
     "Parse the password-store data in the string CONTENTS and return its secret.
