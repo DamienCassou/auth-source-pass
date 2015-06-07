@@ -75,7 +75,48 @@ See `auth-source-search' for details on SPEC."
                                  :port "587"
                                  :require '(:user :secret)))
 
+
+;; password-store file parsing based on the multiline convention
+;; described here: http://www.passwordstore.org/#organization
 
+(defun auth-pass-get (key entry)
+  "Return the value associated to KEY in the password-store entry ENTRY.
+
+ENTRY is the name of a password-store entry.
+The key used to retrieve the password is the symbol `secret'.
+
+The convention used as the format for a password-store file is
+the following (see http://www.passwordstore.org/#organization):
+
+secret
+key1: value1
+key2: value2"
+  (let ((data (auth-pass-parse-entry entry)))
+    (cdr (assoc key data))))
+
+(defun auth-pass-parse-entry (entry)
+  "Return an alist of the data associated with ENTRY.
+
+ENTRY is the name of a password-store entry."
+  (let ((file-contents (password-store--run-show entry)))
+    (cons `(secret . ,(auth-pass--parse-secret file-contents))
+          (auth-pass--parse-data file-contents))))
+
+(defun auth-pass--parse-secret (contents)
+    "Parse the password-store data in the string CONTENTS and return its secret.
+The secret is the first line of CONTENTS."
+  (car (split-string contents "\\\n" t)))
+
+(defun auth-pass--parse-data (contents)
+  "Parse the password-store data in the string CONTENTS and return an alist.
+CONTENTS is the contents of a password-store formatted file."
+  (let ((lines (split-string contents "\\\n" t "\\\s")))
+    (mapcar (lambda (line)
+               (let ((pair (mapcar #'string-trim
+                                    (split-string line ":"))))
+                 (cons (car pair)
+                       (mapconcat #'identity (cdr pair) ":"))))
+             (cdr lines))))
 
 (provide 'auth-password-store)
 ;;; auth-password-store.el ends here
