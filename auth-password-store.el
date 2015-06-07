@@ -1,8 +1,9 @@
 ;;; auth-password-store.el --- Integrate auth-source with password-store -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015 Damien Cassou
+;; Copyright (C) 2015 Damien Cassou & Nicolas Petton
 
-;; Author: Damien Cassou <damien@cassou.me>
+;; Author: Damien Cassou <damien@cassou.me>,
+;;         Nicolas Petton <nicolas@petton.fr>
 ;; Version: 0.1
 ;; GIT: https://github.com/DamienCassou/auth-password-store
 ;; Package-Requires: ((emacs "24") (password-store "0.1"))

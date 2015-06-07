@@ -24,7 +24,7 @@ Yes, please do! See [CONTRIBUTING][] for guidelines.
 
 ## License
 
-See [COPYING][]. Copyright (c) 2015 Damien Cassou.
+See [COPYING][]. Copyright (c) 2015 Damien Cassou & Nicolas Petton.
 
 
 [CONTRIBUTING]: ./CONTRIBUTING.md
