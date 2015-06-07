@@ -33,6 +33,7 @@
 (require 'cl-lib)
 (require 'cl-macs)
 (require 'auth-source)
+(require 'password-store)
 
 ;; search password store for a password matching the parameters
 (cl-defun auth-pass-search (&rest
