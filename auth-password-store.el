@@ -34,13 +34,6 @@
 (require 'cl-macs)
 (require 'auth-source)
 
-(defvar auth-pass-backend
-  (auth-source-backend "password-store"
-                           :source "."
-                           :type 'password-store
-                           :search-function #'auth-pass-search)
-  "Auth-source backend for password-store.")
-
 ;; search password store for a password matching the parameters
 (cl-defun auth-pass-search (&rest
                             spec
@@ -50,9 +43,16 @@
   "Given a property list SPEC, return search matches from the :backend.
 See `auth-source-search' for details on SPEC."
   (cl-assert (or (null type) (eq type (oref backend type)))
-          t "Invalid password-store search: %s %s")
+             t "Invalid password-store search: %s %s")
 
   `(:host ,host :port ,port :user "bfoo" :secret ,(lambda () "the secret in a function")))
+
+(defvar auth-pass-backend
+  (auth-source-backend "password-store"
+                       :source "."
+                       :type 'password-store
+                       :search-function #'auth-pass-search)
+  "Auth-source backend for password-store.")
 
 ;; override this function to make it work (if you evaluate this, you
 ;; won't be able to use Emacs anymore, we really need to change that
