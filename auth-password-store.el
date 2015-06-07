@@ -55,15 +55,19 @@ See `auth-source-search' for details on SPEC."
                        :search-function #'auth-pass-search)
   "Auth-source backend for password-store.")
 
-;; override this function to make it work (if you evaluate this, you
-;; won't be able to use Emacs anymore, we really need to change that
-;; into an advice)
-(defun auth-source-backend-parse (entry)
-  (auth-source-backend-parse-parameters entry
-                                        auth-pass-backend))
+(defun pass-auth-backend-parse (entry)
+  "Create a password-store auth-source backend from ENTRY."
+  (when (eq entry 'password-store)
+    (edebug)
+    (auth-source-backend-parse-parameters entry auth-pass-backend)))
+
+(advice-add 'auth-source-backend-parse :before-until #'pass-auth-backend-parse)
 
 ;; clear the cache (required after each change to #'auth-pass-search)
 (auth-source-forget-all-cached)
+
+;; To add 'password-store to the list of sources, evaluate the following:
+;; (add-to-list 'auth-sources 'password-store)
 
 ;; try to search a user and password for given host and port
 (setq myauth (auth-source-search :max 1
@@ -74,5 +78,4 @@ See `auth-source-search' for details on SPEC."
 
 
 (provide 'auth-password-store)
-
 ;;; auth-password-store.el ends here
