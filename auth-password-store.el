@@ -41,7 +41,7 @@
                             &allow-other-keys)
   "Given a property list SPEC, return search matches from the :backend.
 See `auth-source-search' for details on SPEC."
-  (assert (or (null type) (eq type (oref backend type)))
+  (cl-assert (or (null type) (eq type (oref backend type)))
           t "Invalid password-store search: %s %s")
 
   `(:host ,host :port ,port :user "bfoo" :secret ,(lambda () "the secret in a function")))
