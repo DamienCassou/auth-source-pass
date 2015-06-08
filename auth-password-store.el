@@ -57,12 +57,12 @@ See `auth-source-search' for details on SPEC."
                        :search-function #'auth-pass-search)
   "Auth-source backend for password-store.")
 
-(defun pass-auth-backend-parse (entry)
+(defun auth-pass-backend-parse (entry)
   "Create a password-store auth-source backend from ENTRY."
   (when (eq entry 'password-store)
     (auth-source-backend-parse-parameters entry auth-pass-backend)))
 
-(advice-add 'auth-source-backend-parse :before-until #'pass-auth-backend-parse)
+(advice-add 'auth-source-backend-parse :before-until #'auth-pass-backend-parse)
 
 ;; clear the cache (required after each change to #'auth-pass-search)
 (auth-source-forget-all-cached)
