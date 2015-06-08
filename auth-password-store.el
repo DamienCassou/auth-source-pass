@@ -37,18 +37,23 @@
 (require 'auth-source)
 (require 'password-store)
 
-;; search password store for a password matching the parameters
-(cl-defun auth-pass-search (&rest
-                            spec
-                            &key backend require create delete
-                            type max host user port
+(cl-defun auth-pass-search (&rest spec
+                            &key backend require type host user port
                             &allow-other-keys)
   "Given a property list SPEC, return search matches from the :backend.
 See `auth-source-search' for details on SPEC."
   (cl-assert (or (null type) (eq type (oref backend type)))
              t "Invalid password-store search: %s %s")
-
-  `(:host ,host :port ,port :user "bfoo" :secret ,(lambda () "the secret in a function")))
+  (let* ((results (seq-filter (lambda (entry)
+                                (string-match host entry))
+                              (password-store-list)))
+         (entry (car results)))
+    (when entry
+      (list
+       :host host
+       :port port
+       :user (or user (auth-pass-get "user" entry))
+       :secret (lambda () (auth-pass-get 'secret entry))))))
 
 (defvar auth-pass-backend
   (auth-source-backend "password-store"
