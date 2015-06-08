@@ -52,17 +52,12 @@ See `auth-source-search' for details on SPEC."
        :user (auth-pass-get "user" entry)
        :secret (lambda () (auth-pass-get 'secret entry))))))
 
-(defun auth-pass--find-match (host user)
-  "Return a password-store entry name matching HOST and USER.
-If many matches ar found, return the first one.  If no match is
-found, return nil."
-  (let ((entries (seq-filter (lambda (entry)
-                               (string-match host entry))
-                             (password-store-list))))
-    (seq-some-p (lambda (entry)
-                  (or (null user)
-                      (string= user (auth-pass-get "user" entry))))
-                entries)))
+(defun auth-pass-enable ()
+  "Enable auth-password-store."
+  ;; To add 'password-store to the list of sources, evaluate the following:
+  (add-to-list 'auth-sources 'password-store)
+  ;; clear the cache (required after each change to #'auth-pass-search)
+  (auth-source-forget-all-cached))
 
 (defvar auth-pass-backend
   (auth-source-backend "password-store"
@@ -78,15 +73,9 @@ found, return nil."
 
 (advice-add 'auth-source-backend-parse :before-until #'auth-pass-backend-parse)
 
-;; clear the cache (required after each change to #'auth-pass-search)
-(auth-source-forget-all-cached)
-
-;; To add 'password-store to the list of sources, evaluate the following:
-;; (add-to-list 'auth-sources 'password-store)
-
 ;; try to search a user and password for given host and port
 (setq myauth (auth-source-search :max 1
-                                 :host "smtps.univ-lille1.fr"
+                                 :host "mail.messagingengine.com"
                                  :port "587"
                                  :require '(:user :secret)))
 
@@ -132,6 +121,18 @@ CONTENTS is the contents of a password-store formatted file."
                               (cons (car pair)
                                     (mapconcat #'identity (cdr pair) ":")))))
                         (cdr lines)))))
+
+(defun auth-pass--find-match (host user)
+  "Return a password-store entry name matching HOST and USER.
+If many matches ar found, return the first one.  If no match is
+found, return nil."
+  (let ((entries (seq-filter (lambda (entry)
+                               (string-match host entry))
+                             (password-store-list))))
+    (seq-some-p (lambda (entry)
+                  (or (null user)
+                      (string= user (auth-pass-get "user" entry))))
+                entries)))
 
 (provide 'auth-password-store)
 ;;; auth-password-store.el ends here
