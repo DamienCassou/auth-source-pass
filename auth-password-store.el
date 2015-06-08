@@ -30,6 +30,7 @@
 ;; Integrate Emacs' auth-source with password-store
 
 ;;; Code:
+(require 'subr-x)
 (require 'cl-lib)
 (require 'cl-macs)
 (require 'auth-source)
