@@ -6,7 +6,7 @@
 ;;         Nicolas Petton <nicolas@petton.fr>
 ;; Version: 0.1
 ;; GIT: https://github.com/DamienCassou/auth-password-store
-;; Package-Requires: ((emacs "24") (password-store "0.1"))
+;; Package-Requires: ((emacs "24") (password-store "0.1") (seq "1.7"))
 ;; Created: 07 Jun 2015
 ;; Keywords: pass password-store auth-source username password login
 
@@ -30,6 +30,7 @@
 ;; Integrate Emacs' auth-source with password-store
 
 ;;; Code:
+(require 'seq)
 (require 'subr-x)
 (require 'cl-lib)
 (require 'cl-macs)
@@ -113,12 +114,14 @@ The secret is the first line of CONTENTS."
   "Parse the password-store data in the string CONTENTS and return an alist.
 CONTENTS is the contents of a password-store formatted file."
   (let ((lines (split-string contents "\\\n" t "\\\s")))
-    (mapcar (lambda (line)
-               (let ((pair (mapcar #'string-trim
-                                    (split-string line ":"))))
-                 (cons (car pair)
-                       (mapconcat #'identity (cdr pair) ":"))))
-             (cdr lines))))
+    (seq-remove #'null
+                (mapcar (lambda (line)
+                          (let ((pair (mapcar #'string-trim
+                                              (split-string line ":"))))
+                            (when (> (length pair) 1)
+                              (cons (car pair)
+                                    (mapconcat #'identity (cdr pair) ":")))))
+                        (cdr lines)))))
 
 (provide 'auth-password-store)
 ;;; auth-password-store.el ends here

@@ -27,6 +27,26 @@
 
 (require 'ert)
 
+(require 'auth-password-store)
+
+(ert-deftest parse-simple ()
+  (let ((content "pass\nkey1:val1\nkey2:val2\n"))
+    (should (equal (auth-pass--parse-data content)
+                   '(("key1" . "val1")
+                     ("key2" . "val2"))))))
+
+(ert-deftest parse-with-dash-line ()
+  (let ((content "pass\n--\nkey1:val1\nkey2:val2\n"))
+    (should (equal (auth-pass--parse-data content)
+                   '(("key1" . "val1")
+                     ("key2" . "val2"))))))
+
+(ert-deftest parse-with-trailing-spaces ()
+  (let ((content "pass\n--\nkey1 :val1   \nkey2:   val2\n\n"))
+    (should (equal (auth-pass--parse-data content)
+                   '(("key1" . "val1")
+                     ("key2" . "val2"))))))
+
 (provide 'auth-password-store-tests)
 
 ;;; auth-password-store-tests.el ends here
