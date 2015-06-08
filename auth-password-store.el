@@ -44,16 +44,25 @@
 See `auth-source-search' for details on SPEC."
   (cl-assert (or (null type) (eq type (oref backend type)))
              t "Invalid password-store search: %s %s")
-  (let* ((results (seq-filter (lambda (entry)
-                                (string-match host entry))
-                              (password-store-list)))
-         (entry (car results)))
+  (let ((entry (auth-pass--find-match host user)))
     (when entry
       (list
        :host host
-       :port port
-       :user (or user (auth-pass-get "user" entry))
+       :port (or port (aith-pass-get "port" entry))
+       :user (auth-pass-get "user" entry)
        :secret (lambda () (auth-pass-get 'secret entry))))))
+
+(defun auth-pass--find-match (host user)
+  "Return a password-store entry name matching HOST and USER.
+If many matches ar found, return the first one.  If no match is
+found, return nil."
+  (let ((entries (seq-filter (lambda (entry)
+                               (string-match host entry))
+                             (password-store-list))))
+    (seq-some-p (lambda (entry)
+                  (or (null user)
+                      (string= user (auth-pass-get "user" entry))))
+                entries)))
 
 (defvar auth-pass-backend
   (auth-source-backend "password-store"
