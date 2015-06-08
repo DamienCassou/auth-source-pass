@@ -60,7 +60,6 @@ See `auth-source-search' for details on SPEC."
 (defun pass-auth-backend-parse (entry)
   "Create a password-store auth-source backend from ENTRY."
   (when (eq entry 'password-store)
-    (edebug)
     (auth-source-backend-parse-parameters entry auth-pass-backend)))
 
 (advice-add 'auth-source-backend-parse :before-until #'pass-auth-backend-parse)
@@ -78,9 +77,6 @@ See `auth-source-search' for details on SPEC."
                                  :require '(:user :secret)))
 
 
-;; password-store file parsing based on the multiline convention
-;; described here: http://www.passwordstore.org/#organization
-
 (defun auth-pass-get (key entry)
   "Return the value associated to KEY in the password-store entry ENTRY.
 
