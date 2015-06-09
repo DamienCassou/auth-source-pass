@@ -48,7 +48,7 @@ See `auth-source-search' for details on SPEC."
     (when entry
       (list
        :host host
-       :port (or port (aith-pass-get "port" entry))
+       :port (or port (auth-pass-get "port" entry))
        :user (auth-pass-get "user" entry)
        :secret (lambda () (auth-pass-get 'secret entry))))))
 
