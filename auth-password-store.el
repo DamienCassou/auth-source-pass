@@ -93,7 +93,7 @@ secret
 key1: value1
 key2: value2"
   (let ((data (auth-pass-parse-entry entry)))
-    (cdr (assoc key data))))
+    (cdr (assoc (if (string= key "user") "username" key) data))))
 
 (defun auth-pass-parse-entry (entry)
   "Return an alist of the data associated with ENTRY.
