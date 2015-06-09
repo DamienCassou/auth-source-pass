@@ -38,8 +38,8 @@
 (require 'password-store)
 
 (cl-defun auth-pass-search (&rest spec
-                            &key backend require type host user port
-                            &allow-other-keys)
+                                  &key backend require type host user port
+                                  &allow-other-keys)
   "Given a property list SPEC, return search matches from the :backend.
 See `auth-source-search' for details on SPEC."
   (cl-assert (or (null type) (eq type (oref backend type)))
@@ -54,14 +54,14 @@ See `auth-source-search' for details on SPEC."
 
 (defun auth-pass-enable ()
   "Enable auth-password-store."
-  ;; To add 'password-store to the list of sources, evaluate the following:
+  ;; To add password-store to the list of sources, evaluate the following:
   (add-to-list 'auth-sources 'password-store)
   ;; clear the cache (required after each change to #'auth-pass-search)
   (auth-source-forget-all-cached))
 
 (defvar auth-pass-backend
   (auth-source-backend "password-store"
-                       :source "."
+                       :source "." ;; not used
                        :type 'password-store
                        :search-function #'auth-pass-search)
   "Auth-source backend for password-store.")
@@ -124,7 +124,7 @@ CONTENTS is the contents of a password-store formatted file."
 
 (defun auth-pass--find-match (host user)
   "Return a password-store entry name matching HOST and USER.
-If many matches ar found, return the first one.  If no match is
+If many matches are found, return the first one.  If no match is
 found, return nil."
   (let ((entries (seq-filter (lambda (entry)
                                (string-match host entry))
