@@ -46,11 +46,11 @@ See `auth-source-search' for details on SPEC."
              t "Invalid password-store search: %s %s")
   (let ((entry (auth-pass--find-match host user)))
     (when entry
-      (list
-       :host host
-       :port (or port (auth-pass-get "port" entry))
-       :user (auth-pass-get "user" entry)
-       :secret (lambda () (auth-pass-get 'secret entry))))))
+      (list (list
+             :host host
+             :port (or port (auth-pass-get "port" entry))
+             :user (auth-pass-get "user" entry)
+             :secret (lambda () (auth-pass-get 'secret entry)))))))
 
 (defun auth-pass-enable ()
   "Enable auth-password-store."
