@@ -1,4 +1,4 @@
-;;; auth-password-store.el --- Integrate auth-source with password-store -*- lexical-binding: t; -*-
+;;; auth-password-store.el --- Integrate auth-source with password-store -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2015 Damien Cassou & Nicolas Petton
 
@@ -72,12 +72,6 @@ See `auth-source-search' for details on SPEC."
     (auth-source-backend-parse-parameters entry auth-pass-backend)))
 
 (advice-add 'auth-source-backend-parse :before-until #'auth-pass-backend-parse)
-
-;; try to search a user and password for given host and port
-(setq myauth (auth-source-search :max 1
-                                 :host "mail.messagingengine.com"
-                                 :port "587"
-                                 :require '(:user :secret)))
 
 
 (defun auth-pass-get (key entry)
