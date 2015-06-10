@@ -1,7 +1,5 @@
 # auth-password-store
 
-This code does not (yet) work. Please **do not use**.
-
 ## Summary
 
 Integrate Emacs' auth-source with password-store. The
@@ -17,6 +15,13 @@ auth-source.
 ## Installing
 
 Use [melpa](http://melpa.milkbox.net).
+
+## Setup
+
+Add the folowwing to your =init.el= file:
+
+    (require 'auth-password-store)
+    (auth-pass-store-enable)
 
 ## Contributing
 
