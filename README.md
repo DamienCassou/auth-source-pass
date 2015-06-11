@@ -21,7 +21,7 @@ Use [melpa](http://melpa.milkbox.net).
 Add the folowwing to your =init.el= file:
 
     (require 'auth-password-store)
-    (auth-pass-store-enable)
+    (auth-pass-enable)
 
 ## Contributing
 
