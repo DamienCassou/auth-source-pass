@@ -42,6 +42,7 @@
                                   &allow-other-keys)
   "Given a property list SPEC, return search matches from the :backend.
 See `auth-source-search' for details on SPEC."
+  (ignore require)
   (cl-assert (or (null type) (eq type (oref backend type)))
              t "Invalid password-store search: %s %s")
   (let ((entry (auth-pass--find-match host user)))
