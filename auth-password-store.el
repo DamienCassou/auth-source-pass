@@ -6,7 +6,7 @@
 ;;         Nicolas Petton <nicolas@petton.fr>
 ;; Version: 0.1
 ;; GIT: https://github.com/DamienCassou/auth-password-store
-;; Package-Requires: ((emacs "24") (password-store "0.1") (seq "1.7"))
+;; Package-Requires: ((emacs "24.4") (password-store "0.1") (seq "1.7") (cl-lib "0.5"))
 ;; Created: 07 Jun 2015
 ;; Keywords: pass password-store auth-source username password login
 
