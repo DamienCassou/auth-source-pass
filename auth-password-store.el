@@ -54,6 +54,7 @@ See `auth-source-search' for details on SPEC."
              :user (auth-pass-get "user" entry)
              :secret (lambda () (auth-pass-get 'secret entry)))))))
 
+;;;###autoload
 (defun auth-pass-enable ()
   "Enable auth-password-store."
   ;; To add password-store to the list of sources, evaluate the following:
