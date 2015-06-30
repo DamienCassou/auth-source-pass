@@ -46,7 +46,7 @@ See `auth-source-search' for details on SPEC."
              t "Invalid password-store search: %s %s")
   (when (listp host)
     ;; Take the first non-nil item of the list of hosts
-    (setq host (seq-some-p #'identity seq)))
+    (setq host (seq-some-p #'identity host)))
   (let ((entry (auth-pass--find-match host user)))
     (when entry
       (list (list
