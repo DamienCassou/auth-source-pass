@@ -45,7 +45,7 @@ See `auth-source-search' for details on SPEC."
   (cl-assert (or (null type) (eq type (oref backend type)))
              t "Invalid password-store search: %s %s")
   (when (listp host)
-    (setq host (car host)))
+    (setq host (cadr host)))
   (let ((entry (auth-pass--find-match host user)))
     (when entry
       (list (list
