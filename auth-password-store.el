@@ -6,7 +6,7 @@
 ;;         Nicolas Petton <nicolas@petton.fr>
 ;; Version: 0.1
 ;; GIT: https://github.com/DamienCassou/auth-password-store
-;; Package-Requires: ((emacs "24.4") (password-store "0.1") (seq "1.7") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "24.4") (password-store "0.1") (seq "1.9") (cl-lib "0.5"))
 ;; Created: 07 Jun 2015
 ;; Keywords: pass password-store auth-source username password login
 
@@ -46,7 +46,7 @@ See `auth-source-search' for details on SPEC."
              t "Invalid password-store search: %s %s")
   (when (listp host)
     ;; Take the first non-nil item of the list of hosts
-    (setq host (seq-some-p #'identity host)))
+    (setq host (seq-find #'identity host)))
   (let ((entry (auth-pass--find-match host user)))
     (when entry
       (list (list
@@ -129,7 +129,7 @@ found, return nil."
   (let ((entries (seq-filter (lambda (entry)
                                (string-match host entry))
                              (password-store-list))))
-    (seq-some-p (lambda (entry)
+    (seq-find (lambda (entry)
                   (or (null user)
                       (string= user (auth-pass-get "user" entry))))
                 entries)))
