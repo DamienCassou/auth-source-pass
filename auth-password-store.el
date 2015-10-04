@@ -126,13 +126,12 @@ CONTENTS is the contents of a password-store formatted file."
   "Return a password-store entry name matching HOST and USER.
 If many matches are found, return the first one.  If no match is
 found, return nil."
-  (let ((entries (seq-filter (lambda (entry)
-                               (string-match host entry))
-                             (password-store-list))))
-    (seq-find (lambda (entry)
-                  (or (null user)
-                      (string= user (auth-pass-get "user" entry))))
-                entries)))
+  (seq-find (lambda (entry)
+              (and
+               (string= host (auth-pass-get "url" entry))
+               (or (null user)
+                   (string= user (auth-pass-get "user" entry)))))
+            (password-store-list)))
 
 (provide 'auth-password-store)
 ;;; auth-password-store.el ends here
