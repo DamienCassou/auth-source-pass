@@ -9,3 +9,4 @@ doc/auth-password-store.info
 # Packages
 .cask
 elpa
+/dist
