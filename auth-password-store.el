@@ -122,16 +122,27 @@ CONTENTS is the contents of a password-store formatted file."
                                     (mapconcat #'identity (cdr pair) ":")))))
                         (cdr lines)))))
 
+(defun auth-pass--user-match-p (entry user)
+  "Return true iff ENTRY match USER."
+  (or (null user)
+      (string= user (auth-pass-get "user" entry))))
+
 (defun auth-pass--find-match (host user)
   "Return a password-store entry name matching HOST and USER.
 If many matches are found, return the first one.  If no match is
 found, return nil."
-  (seq-find (lambda (entry)
-              (and
-               (string= host (auth-pass-get "url" entry))
-               (or (null user)
-                   (string= user (auth-pass-get "user" entry)))))
-            (password-store-list)))
+  (or
+   ;; start searching for HOST in entry names
+   (seq-find (lambda (entry) (auth-pass--user-match-p entry user))
+             (seq-filter (lambda (entry)
+                           (string-match host entry))
+                         (password-store-list)))
+   ;; if no entry name matches HOST, look inside entries
+   (seq-find (lambda (entry)
+               (and
+                (string= host (auth-pass-get "url" entry))
+                (auth-pass--user-match-p entry user)))
+             (password-store-list))))
 
 (provide 'auth-password-store)
 ;;; auth-password-store.el ends here

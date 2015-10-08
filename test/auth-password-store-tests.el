@@ -1,4 +1,4 @@
-;;; auth-password-store-tests.el --- Tests for auth-password-store.el
+;;; auth-password-store-tests.el --- Tests for auth-password-store.el  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2013 Damien Cassou
 
@@ -29,6 +29,8 @@
 
 (require 'auth-password-store)
 
+(eval-when-compile (require 'cl-macs))
+
 (ert-deftest parse-simple ()
   (let ((content "pass\nkey1:val1\nkey2:val2\n"))
     (should (equal (auth-pass--parse-data content)
@@ -46,6 +48,28 @@
     (should (equal (auth-pass--parse-data content)
                    '(("key1" . "val1")
                      ("key2" . "val2"))))))
+
+(defmacro auth-pass-deftest (name arglist store &rest body)
+  "Define a new ert-test NAME with ARGLIST using STORE as password-store.
+BODY is a sequence of instructions that will be evaluated.
+
+This macro overrides `auth-pass-parse-entry' and `password-store-list' to
+test code without touching the filesystem."
+  (declare (indent 3))
+  `(ert-deftest ,name ,arglist
+     (cl-letf (((symbol-function 'auth-pass-parse-entry) (lambda (entry) (cdr (cl-find entry ,store :key #'car :test #'string=))) )
+               ((symbol-function 'password-store-list) (lambda () (mapcar #'car ,store))))
+       ,@body)))
+
+(auth-pass-deftest find-match-matching-at-url ()
+                   '(("foo" ("url" . "value")))
+  (should (equal (auth-pass--find-match "value" nil)
+                 "foo")))
+
+(auth-pass-deftest find-match-matching-at-entry-name ()
+                   '(("foo" ("url" . "value")))
+  (should (equal (auth-pass--find-match "foo" nil)
+                 "foo")))
 
 (provide 'auth-password-store-tests)
 
