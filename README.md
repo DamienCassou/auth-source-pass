@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/DamienCassou/auth-password-store.svg)](https://travis-ci.org/DamienCassou/auth-password-store)
+
 # auth-password-store
 
 ## Summary
