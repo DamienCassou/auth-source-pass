@@ -132,17 +132,19 @@ CONTENTS is the contents of a password-store formatted file."
 If many matches are found, return the first one.  If no match is
 found, return nil."
   (or
-   ;; start searching for HOST in entry names
-   (seq-find (lambda (entry) (auth-pass--user-match-p entry user))
-             (seq-filter (lambda (entry)
-                           (string-match host entry))
-                         (password-store-list)))
-   ;; if no entry name matches HOST, look inside entries
-   (seq-find (lambda (entry)
-               (and
-                (string= host (auth-pass-get "url" entry))
-                (auth-pass--user-match-p entry user)))
-             (password-store-list))))
+   (progn
+     (auth-source-do-debug "auth-password-store: searching for HOST in entry names")
+     (seq-find (lambda (entry) (auth-pass--user-match-p entry user))
+               (seq-filter (lambda (entry)
+                             (string-match host entry))
+                           (password-store-list))))
+   (progn
+     (auth-source-do-debug "auth-password-store: no entry name matched HOST, looking inside entries")
+     (seq-find (lambda (entry)
+                 (and
+                  (string= host (auth-pass-get "url" entry))
+                  (auth-pass--user-match-p entry user)))
+               (password-store-list)))))
 
 (provide 'auth-password-store)
 ;;; auth-password-store.el ends here
