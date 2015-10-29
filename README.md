@@ -16,7 +16,7 @@ auth-source.
 
 ## Installing
 
-Use [melpa](http://melpa.milkbox.net).
+Use [melpa](https://melpa.org).
 
 ## Setup
 
