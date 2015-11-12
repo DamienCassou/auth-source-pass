@@ -133,13 +133,13 @@ If many matches are found, return the first one.  If no match is
 found, return nil."
   (or
    (progn
-     (auth-source-do-debug "auth-password-store: searching for HOST in entry names")
+     (auth-source-do-debug "auth-password-store: searching for '%s' in entry names" host)
      (seq-find (lambda (entry) (auth-pass--user-match-p entry user))
                (seq-filter (lambda (entry)
                              (string-match host entry))
                            (password-store-list))))
    (progn
-     (auth-source-do-debug "auth-password-store: no entry name matched HOST, looking inside entries")
+     (auth-source-do-debug "auth-password-store: no entry name matched '%s', looking inside entries" host)
      (seq-find (lambda (entry)
                  (and
                   (string= host (auth-pass-get "url" entry))
