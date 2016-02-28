@@ -71,6 +71,15 @@ test code without touching the filesystem."
   (should (equal (auth-pass--find-match "foo" nil)
                  "foo")))
 
+(auth-pass-deftest find-match-matching-at-entry-name-part ()
+                   '(("foo" ("url" . "value")))
+  (should (equal (auth-pass--find-match "https://foo" nil)
+                 "foo")))
+
+(ert-deftest hostname-shouldRemoveProtocol ()
+  (should (equal (auth-pass--hostname "https://foo.bar") "foo.bar"))
+  (should (equal (auth-pass--hostname "http://foo.bar") "foo.bar")))
+
 (provide 'auth-password-store-tests)
 
 ;;; auth-password-store-tests.el ends here
