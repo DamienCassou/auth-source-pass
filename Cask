@@ -1,4 +1,5 @@
 (source melpa)
+(source gnu)
 
 (package-file "auth-password-store.el")
 
