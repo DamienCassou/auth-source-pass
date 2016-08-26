@@ -37,6 +37,17 @@ as a `user` field containing the username on a subsequent line. A
 `port` field can be used to differentiate the authentication data for
 several services with the same username on the same host.
 
+
+## Pass in Emacs
+
+Users of this package may also be interested in functionality provided
+by other Emacs packages dealing with pass:
+
+- [password-store](https://git.zx2c4.com/password-store/tree/contrib/emacs/password-store.el): password store (pass) support ;
+- [pass](https://github.com/NicolasPetton/pass): a major mode for
+  pass ;
+- [helm-pass](https://github.com/jabranham/helm-pass): helm interface for pass.
+
 ## Contributing
 
 Yes, please do! See [CONTRIBUTING][] for guidelines.
