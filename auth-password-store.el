@@ -132,13 +132,29 @@ CONTENTS is the contents of a password-store formatted file."
   (let ((url (url-generic-parse-url host)))
     (or (url-host url) host)))
 
+(defun auth-pass--hostname-with-user (host)
+  "Extract hostname and user from HOST."
+  (let* ((url (url-generic-parse-url host))
+         (user (url-user url))
+         (hostname (url-host url)))
+    (cond
+     ((and user hostname) (format "%s@%s" user hostname))
+     (hostname hostname)
+     (t host))))
+
 (defun auth-pass--find-match (host user)
   "Return a password-store entry name matching HOST and USER.
 If many matches are found, return the first one.  If no match is
 found, return nil."
   (or
+   (let ((hostname (auth-pass--hostname-with-user host)))
+     (auth-source-do-debug "auth-password-store: searching for '%s' in entry names including user" host)
+     (seq-find (lambda (entry) (auth-pass--user-match-p entry user))
+               (seq-filter (lambda (entry)
+                             (string-match hostname entry))
+                           (password-store-list))))
    (let ((hostname (auth-pass--hostname host)))
-     (auth-source-do-debug "auth-password-store: searching for '%s' in entry names" host)
+     (auth-source-do-debug "auth-password-store: searching for '%s' in entry names not including user" host)
      (seq-find (lambda (entry) (auth-pass--user-match-p entry user))
                (seq-filter (lambda (entry)
                              (string-match hostname entry))

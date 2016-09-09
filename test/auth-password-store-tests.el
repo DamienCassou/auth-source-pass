@@ -76,9 +76,36 @@ test code without touching the filesystem."
   (should (equal (auth-pass--find-match "https://foo" nil)
                  "foo")))
 
-(ert-deftest hostname-shouldRemoveProtocol ()
+(auth-pass-deftest find-match-matching-at-entry-name-ignoring-user ()
+                   '(("foo" ("url" . "value")))
+  (should (equal (auth-pass--find-match "https://SomeUser@foo" nil)
+                 "foo")))
+
+(auth-pass-deftest find-match-matching-at-entry-name-with-user ()
+                   '(("SomeUser@foo" ("url" . "value")))
+  (should (equal (auth-pass--find-match "https://SomeUser@foo" nil)
+                 "SomeUser@foo")))
+
+(auth-pass-deftest find-match-matching-at-entry-name-prefer-full ()
+                   '(("SomeUser@foo" ("url" . "value")) ("foo" ("url" . "value")))
+  (should (equal (auth-pass--find-match "https://SomeUser@foo" nil)
+                 "SomeUser@foo")))
+
+;; same as previous one except the store is in another order
+(auth-pass-deftest find-match-matching-at-entry-name-prefer-full-reversed ()
+                   '(("foo" ("url" . "value")) ("SomeUser@foo" ("url" . "value")))
+  (should (equal (auth-pass--find-match "https://SomeUser@foo" nil)
+                 "SomeUser@foo")))
+
+(ert-deftest hostname ()
   (should (equal (auth-pass--hostname "https://foo.bar") "foo.bar"))
-  (should (equal (auth-pass--hostname "http://foo.bar") "foo.bar")))
+  (should (equal (auth-pass--hostname "http://foo.bar") "foo.bar"))
+  (should (equal (auth-pass--hostname "https://SomeUser@foo.bar") "foo.bar")))
+
+(ert-deftest hostname-with-user ()
+  (should (equal (auth-pass--hostname-with-user "https://foo.bar") "foo.bar"))
+  (should (equal (auth-pass--hostname-with-user "http://foo.bar") "foo.bar"))
+  (should (equal (auth-pass--hostname-with-user "https://SomeUser@foo.bar") "SomeUser@foo.bar")))
 
 (provide 'auth-password-store-tests)
 
