@@ -142,6 +142,14 @@ CONTENTS is the contents of a password-store formatted file."
      (hostname hostname)
      (t host))))
 
+(defun auth-pass--find-by-entry-name (name user)
+  "Search the store for an entry named NAME.
+If USER is non nil, the entry return will match USER."
+  (seq-find (lambda (entry) (auth-pass--user-match-p entry user))
+            (seq-filter (lambda (entry)
+                          (string-match name entry))
+                        (password-store-list))))
+
 (defun auth-pass--find-match (host user)
   "Return a password-store entry name matching HOST and USER.
 If many matches are found, return the first one.  If no match is
@@ -149,16 +157,17 @@ found, return nil."
   (or
    (let ((hostname (auth-pass--hostname-with-user host)))
      (auth-source-do-debug "auth-password-store: searching for '%s' in entry names including user" host)
-     (seq-find (lambda (entry) (auth-pass--user-match-p entry user))
-               (seq-filter (lambda (entry)
-                             (string-match hostname entry))
-                           (password-store-list))))
-   (let ((hostname (auth-pass--hostname host)))
-     (auth-source-do-debug "auth-password-store: searching for '%s' in entry names not including user" host)
-     (seq-find (lambda (entry) (auth-pass--user-match-p entry user))
-               (seq-filter (lambda (entry)
-                             (string-match hostname entry))
-                           (password-store-list))))
+     (auth-pass--find-by-entry-name hostname user))
+   (when (url-user (url-generic-parse-url host))
+     (let ((hostname (auth-pass--hostname host)))
+       (auth-source-do-debug "auth-password-store: searching for '%s' in entry names not including user" host)
+       (auth-pass--find-by-entry-name hostname user)))
+   (when (not (url-host (url-generic-parse-url host)))
+     (let ((components (split-string host "\\.")))
+       (when (= (length components) 3)
+         (let ((top-level-host (mapconcat 'identity (cdr components) ".")))
+           (auth-source-do-debug "auth-password-store: searching for '%s' in entry names" top-level-host)
+           (auth-pass--find-by-entry-name top-level-host user)))))
    (progn
      (auth-source-do-debug "auth-password-store: no entry name matched '%s', looking inside entries" host)
      (seq-find (lambda (entry)
