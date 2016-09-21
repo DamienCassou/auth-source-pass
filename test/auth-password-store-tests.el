@@ -49,6 +49,20 @@
                    '(("key1" . "val1")
                      ("key2" . "val2"))))))
 
+(defvar auth-pass--debug-log nil
+  "Contains a list of all messages passed to `auth-source-do-debug`.")
+
+(defun should-have-message-containing (regexp)
+  "Assert that at least one `auth-source-do-debug` matched REGEXP."
+  (should (seq-find (lambda (message)
+                      (string-match regexp message))
+                    auth-pass--debug-log)))
+
+(defun auth-pass-debug (&rest msg)
+  "Format MSG and add that to `auth-pass--debug-log`.
+This function is intended to be set to `auth-source-debug`."
+  (add-to-list 'auth-pass--debug-log (apply #'format msg) t))
+
 (defmacro auth-pass-deftest (name arglist store &rest body)
   "Define a new ert-test NAME with ARGLIST using STORE as password-store.
 BODY is a sequence of instructions that will be evaluated.
@@ -59,43 +73,97 @@ test code without touching the filesystem."
   `(ert-deftest ,name ,arglist
      (cl-letf (((symbol-function 'auth-pass-parse-entry) (lambda (entry) (cdr (cl-find entry ,store :key #'car :test #'string=))) )
                ((symbol-function 'password-store-list) (lambda () (mapcar #'car ,store))))
-       ,@body)))
-
-(auth-pass-deftest find-match-matching-at-url ()
-                   '(("foo" ("url" . "value")))
-  (should (equal (auth-pass--find-match "value" nil)
-                 "foo")))
+       (let ((auth-source-debug #'auth-pass-debug)
+             (auth-pass--debug-log nil))
+         ,@body))))
 
 (auth-pass-deftest find-match-matching-at-entry-name ()
-                   '(("foo" ("url" . "value")))
+                   '(("foo"))
   (should (equal (auth-pass--find-match "foo" nil)
                  "foo")))
 
 (auth-pass-deftest find-match-matching-at-entry-name-part ()
-                   '(("foo" ("url" . "value")))
+                   '(("foo"))
   (should (equal (auth-pass--find-match "https://foo" nil)
                  "foo")))
 
 (auth-pass-deftest find-match-matching-at-entry-name-ignoring-user ()
-                   '(("foo" ("url" . "value")))
+                   '(("foo"))
   (should (equal (auth-pass--find-match "https://SomeUser@foo" nil)
                  "foo")))
 
 (auth-pass-deftest find-match-matching-at-entry-name-with-user ()
-                   '(("SomeUser@foo" ("url" . "value")))
+                   '(("SomeUser@foo"))
   (should (equal (auth-pass--find-match "https://SomeUser@foo" nil)
                  "SomeUser@foo")))
 
 (auth-pass-deftest find-match-matching-at-entry-name-prefer-full ()
-                   '(("SomeUser@foo" ("url" . "value")) ("foo" ("url" . "value")))
+                   '(("SomeUser@foo") ("foo"))
   (should (equal (auth-pass--find-match "https://SomeUser@foo" nil)
                  "SomeUser@foo")))
 
 ;; same as previous one except the store is in another order
 (auth-pass-deftest find-match-matching-at-entry-name-prefer-full-reversed ()
-                   '(("foo" ("url" . "value")) ("SomeUser@foo" ("url" . "value")))
+                   '(("foo") ("SomeUser@foo"))
   (should (equal (auth-pass--find-match "https://SomeUser@foo" nil)
                  "SomeUser@foo")))
+
+(auth-pass-deftest find-match-matching-at-entry-name-without-subdomain ()
+                   '(("bar.com"))
+  (should (equal (auth-pass--find-match "foo.bar.com" nil)
+                 "bar.com")))
+
+(auth-pass-deftest find-match-matching-at-entry-name-without-subdomain-with-user ()
+                   '(("someone@bar.com"))
+  (should (equal (auth-pass--find-match "foo.bar.com" "someone")
+                 "someone@bar.com")))
+
+(auth-pass-deftest find-match-matching-at-entry-name-without-subdomain-with-bad-user ()
+                   '(("someoneelse@bar.com"))
+  (should (equal (auth-pass--find-match "foo.bar.com" "someone")
+                 nil)))
+
+(auth-pass-deftest find-match-matching-at-entry-name-without-subdomain-prefer-full ()
+                   '(("bar.com") ("foo.bar.com"))
+  (should (equal (auth-pass--find-match "foo.bar.com" nil)
+                 "foo.bar.com")))
+
+(auth-pass-deftest dont-match-at-folder-name ()
+                   '(("foo.bar.com/foo"))
+  (should (equal (auth-pass--find-match "foo.bar.com" nil)
+                 nil)))
+
+(auth-pass-deftest search-with-user-first ()
+                   '(("foo") ("user@foo"))
+  (should (equal (auth-pass--find-match "foo" "user")
+                 "user@foo"))
+  (should-have-message-containing "Found 1 match"))
+
+(auth-pass-deftest give-priority-to-desired-user ()
+                   '(("foo") ("subdir/foo" ("user" . "someone")))
+  (should (equal (auth-pass--find-match "foo" "someone")
+                 "subdir/foo"))
+  (should-have-message-containing "Found 2 matches")
+  (should-have-message-containing "matching user field"))
+
+(auth-pass-deftest give-priority-to-desired-user-reversed ()
+                   '(("foo" ("user" . "someone")) ("subdir/foo"))
+  (should (equal (auth-pass--find-match "foo" "someone")
+                 "foo"))
+  (should-have-message-containing "Found 2 matches")
+  (should-have-message-containing "matching user field"))
+
+(auth-pass-deftest return-first-when-several-matches ()
+                   '(("foo") ("subdir/foo"))
+  (should (equal (auth-pass--find-match "foo" nil)
+                 "foo"))
+  (should-have-message-containing "Found 2 matches")
+  (should-have-message-containing "the first one"))
+
+(auth-pass-deftest make-divansantana-happy ()
+                   '(("host.com"))
+  (should (equal (auth-pass--find-match "smtp.host.com" "myusername@host.co.za")
+                 "host.com")))
 
 (ert-deftest hostname ()
   (should (equal (auth-pass--hostname "https://foo.bar") "foo.bar"))
@@ -106,6 +174,37 @@ test code without touching the filesystem."
   (should (equal (auth-pass--hostname-with-user "https://foo.bar") "foo.bar"))
   (should (equal (auth-pass--hostname-with-user "http://foo.bar") "foo.bar"))
   (should (equal (auth-pass--hostname-with-user "https://SomeUser@foo.bar") "SomeUser@foo.bar")))
+
+(defmacro auth-pass-deftest-build-result (name arglist store &rest body)
+  "Define a new ert-test NAME with ARGLIST using STORE as password-store.
+BODY is a sequence of instructions that will be evaluated.
+
+This macro overrides `auth-pass-parse-entry', `password-store-list', and
+`auth-pass--find-match' to ease testing."
+  (declare (indent 3))
+  `(auth-pass-deftest ,name ,arglist ,store
+     (cl-letf (((symbol-function 'auth-pass-find-match)
+                (lambda (_host _user)
+                  "foo")))
+       ,@body)))
+
+(auth-pass-deftest-build-result build-result-return-parameters ()
+                                '(("foo"))
+  (let ((result (auth-pass--build-result "foo" 512 "user")))
+    (should (equal (plist-get result :port) 512))
+    (should (equal (plist-get result :user) "user"))))
+
+(auth-pass-deftest-build-result build-result-return-entry-values ()
+                                '(("foo" ("port" . 512) ("user" . "anuser")))
+  (let ((result (auth-pass--build-result "foo" nil nil)))
+    (should (equal (plist-get result :port) 512))
+    (should (equal (plist-get result :user) "anuser"))))
+
+(auth-pass-deftest-build-result build-result-entry-takes-precedence ()
+                                '(("foo" ("port" . 512) ("user" . "anuser")))
+  (let ((result (auth-pass--build-result "foo" 1024 "anotheruser")))
+    (should (equal (plist-get result :port) 512))
+    (should (equal (plist-get result :user) "anuser"))))
 
 (provide 'auth-password-store-tests)
 

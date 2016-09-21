@@ -36,6 +36,7 @@
 (require 'cl-macs)
 (require 'auth-source)
 (require 'password-store)
+(require 'url-parse)
 
 (cl-defun auth-pass-search (&rest spec
                                   &key backend type host user port
@@ -47,13 +48,20 @@ See `auth-source-search' for details on SPEC."
   (when (listp host)
     ;; Take the first non-nil item of the list of hosts
     (setq host (seq-find #'identity host)))
+  (list (auth-pass--build-result host port user)))
+
+(defun auth-pass--build-result (host port user)
+  "Build auth-pass entry matching HOST, PORT and USER."
   (let ((entry (auth-pass--find-match host user)))
     (when entry
-      (list (list
-             :host host
-             :port (or port (auth-pass-get "port" entry))
-             :user (auth-pass-get "user" entry)
-             :secret (lambda () (auth-pass-get 'secret entry)))))))
+      (let ((retval (list
+                     :host host
+                     :port (or (auth-pass-get "port" entry) port)
+                     :user (or (auth-pass-get "user" entry) user)
+                     :secret (lambda () (auth-pass-get 'secret entry)))))
+        (auth-pass--do-debug "return %s as final result (plus hidden password)"
+                             (seq-subseq retval 0 -2)) ;; remove password
+        retval))))
 
 ;;;###autoload
 (defun auth-pass-enable ()
@@ -142,30 +150,73 @@ CONTENTS is the contents of a password-store formatted file."
      (hostname hostname)
      (t host))))
 
+(defun auth-pass--remove-directory-name (name)
+  "Remove directories from NAME.
+E.g., if NAME is \"foo/bar\", return \"bar\"."
+  (replace-regexp-in-string ".*/" "" name))
+
+(defun auth-pass--do-debug (&rest msg)
+  "Call `auth-source-do-debug` with MSG and a prefix."
+  (apply #'auth-source-do-debug
+         (cons (concat "auth-password-store: " (car msg))
+               (cdr msg))))
+
+(defun auth-pass--select-one-entry (entries user)
+  "Select one entry from ENTRIES by searching for a field matching USER."
+  (let ((number (length entries))
+        (entry-with-user
+         (and user
+              (seq-find (lambda (entry)
+                          (string-equal (auth-pass-get "user" entry) user))
+                        entries))))
+    (auth-pass--do-debug "found %s matches: %s" number
+                         (mapconcat #'identity entries ", "))
+    (if entry-with-user
+        (progn
+          (auth-pass--do-debug "return %s as it contains matching user field"
+                               entry-with-user)
+          entry-with-user)
+      (auth-pass--do-debug "return %s as it is the first one" (car entries))
+      (car entries))))
+
+(defun auth-pass--find-by-entry-name (name user)
+  "Search the store for an entry named NAME.
+If USER is non nil, give precedence to entries containing a user field
+matching USER."
+  (auth-pass--do-debug "searching for '%s' in entry names (user: %s)"
+                       name
+                       user)
+  (let ((matching-entries
+         (seq-filter (lambda (entry)
+                       (string-equal
+                        name
+                        (auth-pass--remove-directory-name entry)))
+                     (password-store-list))))
+    (pcase (length matching-entries)
+      (0 (auth-pass--do-debug "no match found")
+         nil)
+      (1 (auth-pass--do-debug "found 1 match: %s" (car matching-entries))
+         (car matching-entries))
+      (_ (auth-pass--select-one-entry matching-entries user)))))
+
 (defun auth-pass--find-match (host user)
   "Return a password-store entry name matching HOST and USER.
 If many matches are found, return the first one.  If no match is
 found, return nil."
   (or
-   (let ((hostname (auth-pass--hostname-with-user host)))
-     (auth-source-do-debug "auth-password-store: searching for '%s' in entry names including user" host)
-     (seq-find (lambda (entry) (auth-pass--user-match-p entry user))
-               (seq-filter (lambda (entry)
-                             (string-match hostname entry))
-                           (password-store-list))))
-   (let ((hostname (auth-pass--hostname host)))
-     (auth-source-do-debug "auth-password-store: searching for '%s' in entry names not including user" host)
-     (seq-find (lambda (entry) (auth-pass--user-match-p entry user))
-               (seq-filter (lambda (entry)
-                             (string-match hostname entry))
-                           (password-store-list))))
-   (progn
-     (auth-source-do-debug "auth-password-store: no entry name matched '%s', looking inside entries" host)
-     (seq-find (lambda (entry)
-                 (and
-                  (string= host (auth-pass-get "url" entry))
-                  (auth-pass--user-match-p entry user)))
-               (password-store-list)))))
+   (if (url-user (url-generic-parse-url host))
+       ;; if HOST contains a user (e.g., "user@host.com"), <HOST>
+       (auth-pass--find-by-entry-name (auth-pass--hostname-with-user host) user)
+     ;; otherwise, if USER is provided, search for <USER>@<HOST>
+     (when (stringp user)
+       (auth-pass--find-by-entry-name (concat user "@" (auth-pass--hostname host)) user)))
+   ;; if that didn't work, search for HOST without it's user component if any
+   (auth-pass--find-by-entry-name (auth-pass--hostname host) user)
+   ;; if that didn't work, remove subdomain: foo.bar.com -> bar.com
+   (let ((components (split-string host "\\.")))
+     (when (= (length components) 3)
+       ;; start from scratch
+       (auth-pass--find-match (mapconcat 'identity (cdr components) ".") user)))))
 
 (provide 'auth-password-store)
 ;;; auth-password-store.el ends here
