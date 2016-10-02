@@ -167,14 +167,7 @@ found, return nil."
        (when (= (length components) 3)
          (let ((top-level-host (mapconcat 'identity (cdr components) ".")))
            (auth-source-do-debug "auth-password-store: searching for '%s' in entry names" top-level-host)
-           (auth-pass--find-by-entry-name top-level-host user)))))
-   (progn
-     (auth-source-do-debug "auth-password-store: no entry name matched '%s', looking inside entries" host)
-     (seq-find (lambda (entry)
-                 (and
-                  (string= host (auth-pass-get "url" entry))
-                  (auth-pass--user-match-p entry user)))
-               (password-store-list)))))
+           (auth-pass--find-by-entry-name top-level-host user)))))))
 
 (provide 'auth-password-store)
 ;;; auth-password-store.el ends here
