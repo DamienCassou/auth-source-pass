@@ -97,6 +97,16 @@ test code without touching the filesystem."
   (should (equal (auth-pass--find-match "https://SomeUser@foo" nil)
                  "SomeUser@foo")))
 
+(auth-pass-deftest find-match-matching-at-entry-name-without-subdomain ()
+                   '(("bar.com" ("url" . "value")))
+  (should (equal (auth-pass--find-match "foo.bar.com" nil)
+                 "bar.com")))
+
+(auth-pass-deftest find-match-matching-at-entry-name-without-subdomain-prefer-full ()
+                   '(("bar.com" ("url" . "value")) ("foo.bar.com" ("url" . "value")))
+  (should (equal (auth-pass--find-match "foo.bar.com" nil)
+                 "foo.bar.com")))
+
 (ert-deftest hostname ()
   (should (equal (auth-pass--hostname "https://foo.bar") "foo.bar"))
   (should (equal (auth-pass--hostname "http://foo.bar") "foo.bar"))
