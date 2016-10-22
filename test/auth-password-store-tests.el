@@ -68,11 +68,12 @@ This function is intended to be set to `auth-source-debug`."
 BODY is a sequence of instructions that will be evaluated.
 
 This macro overrides `auth-pass-parse-entry' and `password-store-list' to
-test code without touching the filesystem."
+test code without touching the file system."
   (declare (indent 3))
   `(ert-deftest ,name ,arglist
      (cl-letf (((symbol-function 'auth-pass-parse-entry) (lambda (entry) (cdr (cl-find entry ,store :key #'car :test #'string=))) )
-               ((symbol-function 'password-store-list) (lambda () (mapcar #'car ,store))))
+               ((symbol-function 'password-store-list) (lambda () (mapcar #'car ,store)))
+               ((symbol-function 'auth-pass--entry-valid-p) (lambda (_entry) t)))
        (let ((auth-source-debug #'auth-pass-debug)
              (auth-pass--debug-log nil))
          ,@body))))
@@ -205,6 +206,27 @@ This macro overrides `auth-pass-parse-entry', `password-store-list', and
   (let ((result (auth-pass--build-result "foo" 1024 "anotheruser")))
     (should (equal (plist-get result :port) 512))
     (should (equal (plist-get result :user) "anuser"))))
+
+(ert-deftest only-return-entries-that-can-be-open ()
+  (cl-letf (((symbol-function 'password-store-list)
+             (lambda () '("foo.site.com" "bar.site.com")))
+            ((symbol-function 'auth-pass--entry-valid-p)
+             ;; only foo.site.com is valid
+             (lambda (entry) (string-equal entry "foo.site.com"))))
+    (should (equal (auth-pass--find-all-by-entry-name "foo.site.com")
+                   '("foo.site.com")))
+    (should (equal (auth-pass--find-all-by-entry-name "bar.site.com")
+                   '()))))
+
+(ert-deftest entry-is-not-valid-when-unreadable ()
+  (cl-letf (((symbol-function 'password-store--run-show)
+             (lambda (entry)
+               ;; only foo is a valid entry
+               (if (string-equal entry "foo")
+                   "password"
+                 nil))))
+    (should (auth-pass--entry-valid-p "foo"))
+    (should-not (auth-pass--entry-valid-p "bar"))))
 
 (provide 'auth-password-store-tests)
 

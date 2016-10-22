@@ -179,19 +179,34 @@ E.g., if NAME is \"foo/bar\", return \"bar\"."
       (auth-pass--do-debug "return %s as it is the first one" (car entries))
       (car entries))))
 
-(defun auth-pass--find-by-entry-name (name user)
-  "Search the store for an entry named NAME.
+(defun auth-pass--entry-valid-p (entry)
+  "Return t iff ENTRY can be opened.
+Also displays a warning if not.  This function is slow, don't call it too
+often."
+  (if (auth-pass-parse-entry entry)
+      t
+    (auth-pass--do-debug "entry '%s' is not valid" entry)
+    nil))
+
+(defun auth-pass--find-all-by-entry-name (name)
+  "Search the store for all entries matching NAME.
+Only return valid entries as of `auth-pass--entry-valid-p'.'"
+  (seq-filter (lambda (entry)
+                (and
+                 (string-equal
+                  name
+                  (auth-pass--remove-directory-name entry))
+                 (auth-pass--entry-valid-p entry)))
+              (password-store-list)))
+
+(defun auth-pass--find-one-by-entry-name (name user)
+  "Search the store for an entry matching NAME.
 If USER is non nil, give precedence to entries containing a user field
 matching USER."
   (auth-pass--do-debug "searching for '%s' in entry names (user: %s)"
                        name
                        user)
-  (let ((matching-entries
-         (seq-filter (lambda (entry)
-                       (string-equal
-                        name
-                        (auth-pass--remove-directory-name entry)))
-                     (password-store-list))))
+  (let ((matching-entries (auth-pass--find-all-by-entry-name name)))
     (pcase (length matching-entries)
       (0 (auth-pass--do-debug "no match found")
          nil)
@@ -206,12 +221,12 @@ found, return nil."
   (or
    (if (url-user (url-generic-parse-url host))
        ;; if HOST contains a user (e.g., "user@host.com"), <HOST>
-       (auth-pass--find-by-entry-name (auth-pass--hostname-with-user host) user)
+       (auth-pass--find-one-by-entry-name (auth-pass--hostname-with-user host) user)
      ;; otherwise, if USER is provided, search for <USER>@<HOST>
      (when (stringp user)
-       (auth-pass--find-by-entry-name (concat user "@" (auth-pass--hostname host)) user)))
+       (auth-pass--find-one-by-entry-name (concat user "@" (auth-pass--hostname host)) user)))
    ;; if that didn't work, search for HOST without it's user component if any
-   (auth-pass--find-by-entry-name (auth-pass--hostname host) user)
+   (auth-pass--find-one-by-entry-name (auth-pass--hostname host) user)
    ;; if that didn't work, remove subdomain: foo.bar.com -> bar.com
    (let ((components (split-string host "\\.")))
      (when (= (length components) 3)
