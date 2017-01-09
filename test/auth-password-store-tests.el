@@ -209,14 +209,18 @@ This macro overrides `auth-pass-parse-entry', `password-store-list', and
 
 (ert-deftest only-return-entries-that-can-be-open ()
   (cl-letf (((symbol-function 'password-store-list)
-             (lambda () '("foo.site.com" "bar.site.com")))
+             (lambda () '("foo.site.com" "bar.site.com"
+                          "mail/baz.site.com/scott")))
             ((symbol-function 'auth-pass--entry-valid-p)
-             ;; only foo.site.com is valid
-             (lambda (entry) (string-equal entry "foo.site.com"))))
-    (should (equal (auth-pass--find-all-by-entry-name "foo.site.com")
+             ;; only foo.site.com and mail/baz.site.com/scott are valid
+             (lambda (entry) (member entry '("foo.site.com"
+                                             "mail/baz.site.com/scott")))))
+    (should (equal (auth-pass--find-all-by-entry-name "foo.site.com" "someuser")
                    '("foo.site.com")))
-    (should (equal (auth-pass--find-all-by-entry-name "bar.site.com")
-                   '()))))
+    (should (equal (auth-pass--find-all-by-entry-name "bar.site.com" "someuser")
+                   '()))
+    (should (equal (auth-pass--find-all-by-entry-name "baz.site.com" "scott")
+                   '("mail/baz.site.com/scott")))))
 
 (ert-deftest entry-is-not-valid-when-unreadable ()
   (cl-letf (((symbol-function 'password-store--run-show)

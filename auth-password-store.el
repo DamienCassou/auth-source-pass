@@ -188,25 +188,28 @@ often."
     (auth-pass--do-debug "entry '%s' is not valid" entry)
     nil))
 
-(defun auth-pass--find-all-by-entry-name (name)
-  "Search the store for all entries matching NAME.
-Only return valid entries as of `auth-pass--entry-valid-p'.'"
+(defun auth-pass--find-all-by-entry-name (entryname user)
+  "Search the store for all entries either matching ENTRYNAME/USER or ENTRYNAME.
+Only return valid entries as of `auth-pass--entry-valid-p'."
   (seq-filter (lambda (entry)
                 (and
-                 (string-equal
-                  name
-                  (auth-pass--remove-directory-name entry))
+                 (or
+                  (let ((components-host-user
+                         (member entryname (split-string entry "/"))))
+                    (and (= (length components-host-user) 2)
+                         (string-equal user (cadr components-host-user))))
+                  (string-equal entryname (auth-pass--remove-directory-name entry)))
                  (auth-pass--entry-valid-p entry)))
               (password-store-list)))
 
-(defun auth-pass--find-one-by-entry-name (name user)
-  "Search the store for an entry matching NAME.
+(defun auth-pass--find-one-by-entry-name (entryname user)
+  "Search the store for an entry matching ENTRYNAME.
 If USER is non nil, give precedence to entries containing a user field
 matching USER."
   (auth-pass--do-debug "searching for '%s' in entry names (user: %s)"
-                       name
+                       entryname
                        user)
-  (let ((matching-entries (auth-pass--find-all-by-entry-name name)))
+  (let ((matching-entries (auth-pass--find-all-by-entry-name entryname user)))
     (pcase (length matching-entries)
       (0 (auth-pass--do-debug "no match found")
          nil)
