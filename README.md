@@ -2,8 +2,6 @@
 
 # auth-password-store
 
-## Summary
-
 Integrate Emacs' auth-source with password-store. The
 [auth-source](https://www.gnu.org/software/emacs/manual/html_mono/auth.html)
 library is a way for Emacs to answer the old burning question “What
@@ -14,16 +12,22 @@ standard unix password manager following the Unix philosophy.
 The auth-password-store project is a password-store backend for
 auth-source.
 
-## Installing
+## Installing on Emacs < 26
 
-Use [melpa](https://melpa.org).
-
-## Setup
-
-Add the following to your `init.el` file:
+If you are running Emacs < 26, use [melpa](https://melpa.org) and add
+the following to your `init.el` file:
 
     (require 'auth-password-store)
     (auth-pass-enable)
+
+## Installing on Emacs >= 26
+
+This library has been included in Emacs 26 (still unreleased) under
+the name `auth-source-pass`. To start using it, just add the following
+to your `init.el` file:
+
+    (require 'auth-store-pass)
+    (auth-source-pass-enable)
 
 ## Organization
 
