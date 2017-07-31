@@ -26,7 +26,7 @@ This library has been included in Emacs 26 (still unreleased) under
 the name `auth-source-pass`. To start using it, just add the following
 to your `init.el` file:
 
-    (require 'auth-store-pass)
+    (require 'auth-source-pass)
     (auth-source-pass-enable)
 
 ## Organization
