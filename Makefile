@@ -13,7 +13,7 @@ USER_ELPA_D  = $(EMACS_D)/elpa
 
 SRCS         = $(filter-out %-pkg.el, $(wildcard *.el))
 TESTS        = $(wildcard test/*.el)
-TAR          = $(DIST)/auth-password-store-$(VERSION).tar
+TAR          = $(DIST)/auth-password-store-$(VERSION).el
 
 
 .PHONY: all deps check install uninstall reinstall clean-all clean
