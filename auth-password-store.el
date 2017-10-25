@@ -145,6 +145,10 @@ CONTENTS is the contents of a password-store formatted file."
      (hostname hostname)
      (t host))))
 
+(defun auth-pass--user (host)
+  "Extract user from HOST or return nil."
+  (url-user (url-generic-parse-url host)))
+
 (defun auth-pass--remove-directory-name (name)
   "Remove directories from NAME.
 E.g., if NAME is \"foo/bar\", return \"bar\"."
@@ -217,7 +221,7 @@ matching USER."
 If many matches are found, return the first one.  If no match is
 found, return nil."
   (or
-   (if (url-user (url-generic-parse-url host))
+   (if (auth-pass--user host)
        ;; if HOST contains a user (e.g., "user@host.com"), <HOST>
        (auth-pass--find-one-by-entry-name (auth-pass--hostname-with-user host) user)
      ;; otherwise, if USER is provided, search for <USER>@<HOST>
@@ -225,6 +229,8 @@ found, return nil."
        (auth-pass--find-one-by-entry-name (concat user "@" (auth-pass--hostname host)) user)))
    ;; if that didn't work, search for HOST without it's user component if any
    (auth-pass--find-one-by-entry-name (auth-pass--hostname host) user)
+   ;; if that didn't work, search for HOST with user extracted from it
+   (auth-pass--find-one-by-entry-name (auth-pass--hostname host) (auth-pass--user host))
    ;; if that didn't work, remove subdomain: foo.bar.com -> bar.com
    (let ((components (split-string host "\\.")))
      (when (= (length components) 3)

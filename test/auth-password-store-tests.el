@@ -134,6 +134,11 @@ test code without touching the file system."
   (should (equal (auth-pass--find-match "foo.bar.com" nil)
                  nil)))
 
+(auth-pass-deftest find-match-matching-extracting-user-from-host ()
+                   '(("foo.com/bar"))
+  (should (equal (auth-pass--find-match "https://bar@foo.com" nil)
+                 "foo.com/bar")))
+
 (auth-pass-deftest search-with-user-first ()
                    '(("foo") ("user@foo"))
   (should (equal (auth-pass--find-match "foo" "user")
