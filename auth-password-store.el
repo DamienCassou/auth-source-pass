@@ -130,11 +130,6 @@ CONTENTS is the contents of a password-store formatted file."
                                     (mapconcat #'identity (cdr pair) ":")))))
                         (cdr lines)))))
 
-(defun auth-pass--user-match-p (entry user)
-  "Return true iff ENTRY match USER."
-  (or (null user)
-      (string= user (auth-pass-get "user" entry))))
-
 (defun auth-pass--hostname (host)
   "Extract hostname from HOST."
   (let ((url (url-generic-parse-url host)))
