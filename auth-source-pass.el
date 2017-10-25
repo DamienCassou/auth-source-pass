@@ -159,6 +159,10 @@ CONTENTS is the contents of a password-store formatted file."
      (hostname hostname)
      (t host))))
 
+(defun auth-source-pass--user (host)
+  "Extract user from HOST or return nil."
+  (url-user (url-generic-parse-url host)))
+
 (defun auth-source-pass--do-debug (&rest msg)
   "Call `auth-source-do-debug` with MSG and a prefix."
   (apply #'auth-source-do-debug
@@ -235,7 +239,7 @@ matching USER."
 If many matches are found, return the first one.  If no match is
 found, return nil."
   (or
-   (if (url-user (url-generic-parse-url host))
+   (if (auth-source-pass--user host)
        ;; if HOST contains a user (e.g., "user@host.com"), <HOST>
        (auth-source-pass--find-one-by-entry-name (auth-source-pass--hostname-with-user host) user)
      ;; otherwise, if USER is provided, search for <USER>@<HOST>
@@ -243,6 +247,8 @@ found, return nil."
        (auth-source-pass--find-one-by-entry-name (concat user "@" (auth-source-pass--hostname host)) user)))
    ;; if that didn't work, search for HOST without it's user component if any
    (auth-source-pass--find-one-by-entry-name (auth-source-pass--hostname host) user)
+   ;; if that didn't work, search for HOST with user extracted from it
+   (auth-source-pass--find-one-by-entry-name (auth-source-pass--hostname host) (auth-source-pass--user host))
    ;; if that didn't work, remove subdomain: foo.bar.com -> bar.com
    (let ((components (split-string host "\\.")))
      (when (= (length components) 3)
