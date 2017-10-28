@@ -39,29 +39,39 @@
 (require 'url-parse)
 
 (cl-defun auth-pass-search (&rest spec
-                                  &key backend type host user port
+                                  &key backend type host user port max
                                   &allow-other-keys)
   "Given a property list SPEC, return search matches from the :backend.
 See `auth-source-search' for details on SPEC."
   (cl-assert (or (null type) (eq type (oref backend type)))
              t "Invalid password-store search: %s %s")
-  (when (listp host)
-    ;; Take the first non-nil item of the list of hosts
-    (setq host (seq-find #'identity host)))
-  (list (auth-pass--build-result host port user)))
+  (let ((host (or host t))
+        (max (or max 1)))
+    (cond
+     ((eq host t) (mapcar #'auth-pass--entry-to-search-result (seq-take (password-store-list) max)))
+     ((listp host) (seq-take (mapcar (lambda (host) (auth-pass--build-result host port user)) host) max))
+     (t (list (auth-pass--build-result host port user))))))
 
 (defun auth-pass--build-result (host port user)
   "Build auth-pass entry matching HOST, PORT and USER."
   (let ((entry (auth-pass--find-match host user)))
-    (when entry
-      (let ((retval (list
-                     :host host
-                     :port (or (auth-pass-get "port" entry) port)
-                     :user (or (auth-pass-get "user" entry) user)
-                     :secret (lambda () (auth-pass-get 'secret entry)))))
-        (auth-pass--do-debug "return %s as final result (plus hidden password)"
-                             (seq-subseq retval 0 -2)) ;; remove password
-        retval))))
+    (auth-pass--entry-to-search-result entry host port user)))
+
+(defun auth-pass--entry-to-search-result (entry &optional host port user)
+  "Convert ENTRY to auth-source search result."
+  (when entry
+    (let ((retval (list
+                   :host (or (auth-pass-get "host" entry) (auth-pass-filename entry) host)
+                   :port (or (auth-pass-get "port" entry) port)
+                   :user (or (auth-pass-get "user" entry) user)
+                   :secret (lambda () (auth-pass-get 'secret entry)))))
+      (auth-pass--do-debug "return %s as final result (plus hidden password)"
+                           (seq-subseq retval 0 -2)) ;; remove password
+      retval)))
+
+(defun auth-pass-filename (entry)
+  "Return ENTRY filename without directory nor extension."
+  (file-name-nondirectory entry))
 
 ;;;###autoload
 (defun auth-pass-enable ()
