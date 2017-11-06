@@ -178,7 +178,7 @@ test code without touching the file system."
   (should (equal (auth-pass--hostname "https://SomeUser@foo.bar") "foo.bar")))
 
 (ert-deftest hostname-with-user ()
-  (should (equal (auth-pass--hostname-with-user "https://foo.bar:443") "foo.bar:443"))
+  (should (equal (auth-pass--hostname-with-user "https://foo.bar:443") "foo.bar"))
   (should (equal (auth-pass--hostname-with-user "https://foo.bar") "foo.bar"))
   (should (equal (auth-pass--hostname-with-user "http://foo.bar") "foo.bar"))
   (should (equal (auth-pass--hostname-with-user "https://SomeUser@foo.bar") "SomeUser@foo.bar")))
