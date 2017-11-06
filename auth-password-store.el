@@ -52,6 +52,10 @@ See `auth-source-search' for details on SPEC."
 
 (defun auth-pass--build-result (host port user)
   "Build auth-pass entry matching HOST, PORT and USER."
+  (if (string-match-p (regexp-quote ":") host)
+      (let ((hostname (split-string host ":")))
+        (if (= (length hostname) 2)
+            (setq host (car hostname)))))
   (let ((entry (auth-pass--find-match host user)))
     (when entry
       (let ((retval (list
@@ -220,9 +224,6 @@ matching USER."
   "Return a password-store entry name matching HOST and USER.
 If many matches are found, return the first one.  If no match is
 found, return nil."
-  (let ((hostname (split-string host ":")))
-    (if (= (length hostname) 2)
-      (setq host (car hostname))))
   (or
    (if (auth-pass--user host)
        ;; if HOST contains a user (e.g., "user@host.com"), <HOST>
