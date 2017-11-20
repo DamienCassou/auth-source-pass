@@ -37,10 +37,16 @@ Password-store project itself for
 find data. This means that the filename of the file containing the
 password for a user on a particular host must contain the hostname.
 The file itself must contain the password on the first line, as well
-as a `user` field containing the username on a subsequent line. A
-`port` field can be used to differentiate the authentication data for
-several services with the same username on the same host.
+as a `user` field containing the username on a subsequent line.
 
+If you have several accounts for the same host, you can name your
+files in 2 different ways:
+
+- `user1@host.gpg` and `user2@host.gpg`, or
+- `host/user1.gpg` and `host/user2.gpg`
+
+If you use several services in the same host, you can add a colon and
+the service name at the end of the filename: e.g., `host:service.gpg`.
 
 ## Pass in Emacs
 
