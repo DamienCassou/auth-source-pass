@@ -29,6 +29,10 @@ to your `init.el` file:
     (require 'auth-source-pass)
     (auth-source-pass-enable)
 
+Note that issues for `auth-source-pass` should still be reported on
+[auth-password-store's issue tracker](https://github.com/DamienCassou/auth-password-store/issues).
+Please make sure to specify which library you use.
+
 ## Organization
 
 Auth-password-store follows the first approach suggested by the
