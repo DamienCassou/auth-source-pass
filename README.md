@@ -22,7 +22,7 @@ the following to your `init.el` file:
 
 ## Installing on Emacs >= 26
 
-This library has been included in Emacs 26 (still unreleased) under
+A modified version of this library has been included in Emacs 26 (still unreleased) under
 the name `auth-source-pass`. To start using it, just add the following
 to your `init.el` file:
 
