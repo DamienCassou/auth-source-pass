@@ -78,6 +78,16 @@ test code without touching the file system."
              (auth-pass--debug-log nil))
          ,@body))))
 
+(auth-pass-deftest any-host ()
+                   '(("foo" ("port" . "foo-port") ("host" . "foo-user"))
+                     ("bar"))
+  (should-not (auth-pass-search :host t)))
+
+(auth-pass-deftest undefined-host ()
+                   '(("foo" ("port" . "foo-port") ("host" . "foo-user"))
+                     ("bar"))
+  (should-not (auth-pass-search :host nil)))
+
 (auth-pass-deftest find-match-matching-at-entry-name ()
                    '(("foo"))
   (should (equal (auth-pass--find-match "foo" nil nil)

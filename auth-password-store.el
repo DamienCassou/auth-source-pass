@@ -45,10 +45,18 @@
 See `auth-source-search' for details on SPEC."
   (cl-assert (or (null type) (eq type (oref backend type)))
              t "Invalid password-store search: %s %s")
-  (when (listp host)
+  (when (consp host)
+    (warn "auth-password-store ignores all but first host in spec.")
     ;; Take the first non-nil item of the list of hosts
     (setq host (seq-find #'identity host)))
-  (list (auth-pass--build-result host port user)))
+  (cond ((eq host t)
+         (warn "auth-password-store does not handle host wildcards.")
+         nil)
+        ((null host)
+         ;; Do not build a result, as none will match when HOST is nil
+         nil)
+        (t
+         (list (auth-pass--build-result host port user)))))
 
 (defun auth-pass--build-result (host port user)
   "Build auth-pass entry matching HOST, PORT and USER."
