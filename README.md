@@ -49,8 +49,10 @@ files in 2 different ways:
 - `user1@host.gpg` and `user2@host.gpg`, or
 - `host/user1.gpg` and `host/user2.gpg`
 
-If you use several services in the same host, you can add a colon and
-the service name at the end of the filename: e.g., `host:service.gpg`.
+If you use several ports (sometimes called *services*) in the same
+host (e.g., web and mail), you can add a colon and the port number (or
+service name) at the end of the filename: e.g., `host:443.gpg` or
+`host:imap.gpg`.
 
 ## Pass in Emacs
 
