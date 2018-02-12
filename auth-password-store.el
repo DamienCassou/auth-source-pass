@@ -80,8 +80,7 @@ See `auth-source-search' for details on SPEC."
   (auth-source-forget-all-cached))
 
 (defvar auth-pass-backend
-  (auth-source-backend "password-store"
-                       :source "." ;; not used
+  (auth-source-backend :source "." ;; not used
                        :type 'password-store
                        :search-function #'auth-pass-search)
   "Auth-source backend for password-store.")
