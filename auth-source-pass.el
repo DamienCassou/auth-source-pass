@@ -81,6 +81,7 @@ See `auth-source-search' for details on SPEC."
 
 (defvar auth-source-pass-backend
   (auth-source-backend
+   (when (<= emacs-major-version 25) "password-store")
    :source "." ;; not used
    :type 'password-store
    :search-function #'auth-source-pass-search)
