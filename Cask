@@ -1,7 +1,7 @@
 (source melpa)
 (source gnu)
 
-(package-file "auth-password-store.el")
+(package-file "auth-source-pass.el")
 
 (depends-on "seq")
 

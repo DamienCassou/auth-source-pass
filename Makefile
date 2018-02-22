@@ -13,7 +13,7 @@ USER_ELPA_D  = $(EMACS_D)/elpa
 
 SRCS         = $(filter-out %-pkg.el, $(wildcard *.el))
 TESTS        = $(wildcard test/*.el)
-TAR          = $(DIST)/auth-password-store-$(VERSION).el
+TAR          = $(DIST)/auth-source-pass-$(VERSION).el
 
 
 .PHONY: all deps check install uninstall reinstall clean-all clean
@@ -22,18 +22,19 @@ all : deps $(TAR)
 deps :
 	$(CASK) install
 
-check : deps
-	$(CASK) exec $(EMACSBATCH)  \
-	$(patsubst %,-l % , $(SRCS))\
-	$(patsubst %,-l % , $(TESTS))\
-	-f ert-run-tests-batch-and-exit
+check :
+	emacs -Q --batch -l auth-source-pass.el \
+	--eval "(setq load-prefer-newer t)" \
+	--eval "(progn\
+	(load-file \"test/auth-source-pass-tests.el\")\
+	(ert-run-tests-batch-and-exit))"
 
 install : $(TAR)
 	$(EMACSBATCH) -l package -f package-initialize \
 	--eval '(package-install-file "$(PROJ_ROOT)/$(TAR)")'
 
 uninstall :
-	rm -rf $(USER_ELPA_D)/auth-password-store-*
+	rm -rf $(USER_ELPA_D)/auth-source-pass-*
 
 reinstall : clean uninstall install
 

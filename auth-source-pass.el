@@ -5,9 +5,9 @@
 ;; Author: Damien Cassou <damien@cassou.me>,
 ;;         Nicolas Petton <nicolas@petton.fr>
 ;; Version: 2.0.0
-;; Package-Requires: ((emacs "24.4")
+;; Package-Requires: ((emacs "24.4"))
+;; Url: https://github.com/DamienCassou/auth-password-store
 ;; Created: 07 Jun 2015
-;; Keywords: pass password-store auth-source username password login
 
 ;; This file is part of GNU Emacs.
 
@@ -140,7 +140,7 @@ CONTENTS is the contents of a password-store formatted file."
                         (cdr lines)))))
 
 (defun auth-source-pass--user-match-p (entry user)
-  "Return true iff ENTRY match USER."
+  "Return non-nil iff ENTRY match USER."
   (or (null user)
       (string= user (auth-source-pass-get "user" entry))))
 
