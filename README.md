@@ -1,41 +1,40 @@
 [![Build Status](https://travis-ci.org/DamienCassou/auth-password-store.svg)](https://travis-ci.org/DamienCassou/auth-password-store)
 
-# auth-password-store
+# auth-source-pass (aka. auth-password-store)
 
-Integrate Emacs' auth-source with password-store. The
+The auth-source-pass package, formerly known as auth-password-store,
+integrates Emacs' auth-source library with password-store. The
 [auth-source](https://www.gnu.org/software/emacs/manual/html_mono/auth.html)
 library is a way for Emacs to answer the old burning question “What
 are my user name and password?”.
 [Password-store](http://www.passwordstore.org) (or just `pass`) is a
 standard unix password manager following the Unix philosophy.
 
-The auth-password-store project is a password-store backend for
+The auth-source-pass project is a password-store backend for
 auth-source.
 
-## Installing on Emacs < 26
+## Installing
 
-If you are running Emacs < 26, use [melpa](https://melpa.org) and add
-the following to your `init.el` file:
+This package has been included in Emacs 26 (still unreleased). If that
+suits you, you can just start using it. Otherwise, install it from
+melpa (the name is still auth-password-store).
 
-    (require 'auth-password-store)
-    (auth-pass-enable)
+Regardless of the version you choose, please report issues to
+[auth-password-store's issue
+tracker](https://github.com/DamienCassou/auth-password-store/issues).
+Please make sure to specify which version you use.
 
-## Installing on Emacs >= 26
 
-A modified version of this library has been included in Emacs 26 (still unreleased) under
-the name `auth-source-pass`. To start using it, just add the following
-to your `init.el` file:
+## Usage
+
+Add the following to your `init.el` file:
 
     (require 'auth-source-pass)
     (auth-source-pass-enable)
 
-Note that issues for `auth-source-pass` should still be reported on
-[auth-password-store's issue tracker](https://github.com/DamienCassou/auth-password-store/issues).
-Please make sure to specify which library you use.
-
 ## Organization
 
-Auth-password-store follows the first approach suggested by the
+auth-source-pass follows the first approach suggested by the
 Password-store project itself for
 [data organization](http://www.passwordstore.org/#organization) to
 find data. This means that the filename of the file containing the
