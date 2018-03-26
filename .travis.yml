@@ -1,4 +1,3 @@
-language: emacs
 sudo: false
 
 env:
@@ -9,7 +8,8 @@ matrix:
   fast_finish: true
 
 before_install:
-  - curl -fsSkL https://gist.github.com/rejeep/ebcd57c3af83b049833b/raw > travis.sh && source ./travis.sh
+  # Workaround for https://github.com/rejeep/evm/issues/109
+  - source evm-install.sh
   - evm install $EVM_EMACS --use --skip
   - emacs --version
   - make ci-dependencies
