@@ -149,11 +149,6 @@ CONTENTS is the contents of a password-store formatted file."
                                     (mapconcat #'identity (cdr pair) ":")))))
                         (cdr lines)))))
 
-(defun auth-source-pass--user-match-p (entry user)
-  "Return non-nil iff ENTRY match USER."
-  (or (null user)
-      (string= user (auth-source-pass-get "user" entry))))
-
 (defun auth-source-pass--do-debug (&rest msg)
   "Call `auth-source-do-debug` with MSG and a prefix."
   (apply #'auth-source-do-debug
