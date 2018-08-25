@@ -15,9 +15,8 @@ auth-source.
 
 ## Installing
 
-This package has been included in Emacs 26 (still unreleased). If that
-suits you, you can just start using it. Otherwise, install it from
-melpa (the name is still auth-password-store).
+This package has been included in Emacs 26. If that suits you, you can
+just start using it. Otherwise, install it from melpa.
 
 Regardless of the version you choose, please report issues to
 [auth-password-store's issue
