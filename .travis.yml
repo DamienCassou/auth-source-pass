@@ -2,7 +2,7 @@ sudo: false
 
 env:
   - EVM_EMACS=emacs-25.3-travis
-  - EVM_EMACS=emacs-26-pretest-travis
+  - EVM_EMACS=emacs-26.1-travis
 
 matrix:
   fast_finish: true
