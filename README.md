@@ -38,8 +38,13 @@ Password-store project itself for
 [data organization](http://www.passwordstore.org/#organization) to
 find data. This means that the filename of the file containing the
 password for a user on a particular host must contain the hostname.
-The file itself must contain the password on the first line, as well
-as a `user` field containing the username on a subsequent line.
+The file itself must contain the password on the first line.
+Additional fields can be on subsequent lines. For example:
+
+    passwdstring
+    host: host.domain.com
+    user: user@domain.com
+    port: 993
 
 If you have several accounts for the same host, you can name your
 files in 2 different ways:
@@ -51,6 +56,12 @@ If you use several ports (sometimes called *services*) in the same
 host (e.g., web and mail), you can add a colon and the port number (or
 service name) at the end of the filename: e.g., `host:443.gpg` or
 `host:imap.gpg`.
+
+Be aware that the .gpg extension is added automatically by the `pass`
+utility. You should not include that in the name when you create the
+entry. For example to create a multi-line entry with `pass`:
+
+    pass insert -m user1@host 
 
 ## Pass in Emacs
 
