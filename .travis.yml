@@ -8,8 +8,7 @@ matrix:
   fast_finish: true
 
 before_install:
-  # Workaround for https://github.com/rejeep/evm/issues/109
-  - source evm-install.sh
+  - curl -fsSkL https://gist.github.com/rejeep/ebcd57c3af83b049833b/raw > x.sh && source ./x.sh
   - evm install $EVM_EMACS --use --skip
   - emacs --version
   - make ci-dependencies
