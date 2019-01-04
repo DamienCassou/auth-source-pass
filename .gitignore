@@ -10,3 +10,4 @@ doc/auth-password-store.info
 .cask
 elpa
 /dist
+/makel.mk
