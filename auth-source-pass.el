@@ -38,6 +38,15 @@
 (require 'auth-source)
 (require 'url-parse)
 
+(defgroup auth-source-pass nil
+  "password-store integration within auth-source."
+  :prefix "auth-source-pass-"
+  :group 'auth-source)
+
+(defcustom auth-source-pass-path "~/.password-store"
+  "Path to the password-store folder."
+  :type 'directory)
+
 (cl-defun auth-source-pass-search (&rest spec
                                          &key backend type host user port
                                          &allow-other-keys)
@@ -121,7 +130,7 @@ key2: value2"
   (with-temp-buffer
     (insert-file-contents (expand-file-name
                            (format "%s.gpg" entry)
-                           "~/.password-store"))
+                           auth-source-pass-path))
     (buffer-substring-no-properties (point-min) (point-max))))
 
 (defun auth-source-pass-parse-entry (entry)
@@ -188,7 +197,7 @@ often."
 ;; in Emacs
 (defun auth-source-pass-entries ()
   "Return a list of all password store entries."
-  (let ((store-dir (expand-file-name "~/.password-store/")))
+  (let ((store-dir (expand-file-name auth-source-pass-path)))
     (mapcar
      (lambda (file) (file-name-sans-extension (file-relative-name file store-dir)))
      (directory-files-recursively store-dir "\.gpg$"))))
