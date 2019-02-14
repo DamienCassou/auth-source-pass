@@ -47,6 +47,25 @@
   "Path to the password-store folder."
   :type 'directory)
 
+(defcustom auth-source-pass-validate-during-search t
+  "Attempt to parse entries during search.
+
+This is useful if your password store contains multiple entries
+that match a search, some of which 'auth-source-pass` doesn't
+parse successfully. Without validation during search the first
+matching entry found will be returned. If it doesn't parse it
+will prevent finding a entry later in the search sequence that
+might have matched.
+
+Validation during search is enabled by default. Consider
+disabling it if your password store is protected by a solution
+that requires a physical action on each cryptographic operation
+such as a PGP smartcard with touch required to complete those
+operations so that retrieving a password typically only requires
+one physical action. If you do so, care in ensuring that entries
+parse successfully is recommended."
+  :type 'boolean)
+
 (cl-defun auth-source-pass-search (&rest spec
                                          &key backend type host user port
                                          &allow-other-keys)
@@ -72,11 +91,12 @@ See `auth-source-search' for details on SPEC."
   "Build auth-source-pass entry matching HOST, PORT and USER."
   (let ((entry (auth-source-pass--find-match host user port)))
     (when entry
-      (let ((retval (list
-                     :host host
-                     :port (or (auth-source-pass-get "port" entry) port)
-                     :user (or (auth-source-pass-get "user" entry) user)
-                     :secret (lambda () (auth-source-pass-get 'secret entry)))))
+      (let* ((entry-data (auth-source-pass-parse-entry entry))
+             (retval (list
+                      :host host
+                      :port (or (auth-source-pass--get-attr "port" entry-data) port)
+                      :user (or (auth-source-pass--get-attr "user" entry-data) user)
+                      :secret (lambda () (auth-source-pass--get-attr 'secret entry-data)))))
         (auth-source-pass--do-debug "return %s as final result (plus hidden password)"
                                     (seq-subseq retval 0 -2)) ;; remove password
         retval))))
@@ -121,9 +141,23 @@ secret
 key1: value1
 key2: value2"
   (let ((data (auth-source-pass-parse-entry entry)))
-    (or (cdr (assoc key data))
-        (and (string= key "user")
-             (cdr (assoc "username" data))))))
+    (auth-source-pass--get-attr key data)))
+
+(defun auth-source-pass--get-attr (key entry-data)
+  "Return the value associated to KEY in data from an already parsed entry.
+
+ENTRY-DATA is the data from a parsed password-store entry.
+The key used to retrieve the password is the symbol `secret'.
+
+The convention used as the format for a password-store file is
+the following (see http://www.passwordstore.org/#organization):
+
+secret
+key1: value1
+key2: value2"
+  (or (cdr (assoc key entry-data))
+      (and (string= key "user")
+           (cdr (assoc "username" entry-data)))))
 
 (defun auth-source-pass--read-entry (entry)
   "Return a string with the file content of ENTRY."
@@ -204,7 +238,8 @@ often."
 
 (defun auth-source-pass--find-all-by-entry-name (entryname user)
   "Search the store for all entries either matching ENTRYNAME/USER or ENTRYNAME.
-Only return valid entries as of `auth-source-pass--entry-valid-p'."
+Only return valid entries as of `auth-source-pass--entry-valid-p' unless
+`auth-source-pass-validate-during-search' is nil."
   (seq-filter (lambda (entry)
                 (and
                  (or
@@ -213,7 +248,8 @@ Only return valid entries as of `auth-source-pass--entry-valid-p'."
                     (and (= (length components-host-user) 2)
                          (string-equal user (cadr components-host-user))))
                   (string-equal entryname (file-name-nondirectory entry)))
-                 (auth-source-pass--entry-valid-p entry)))
+                 (or (not auth-source-pass-validate-during-search)
+                     (auth-source-pass--entry-valid-p entry))))
               (auth-source-pass-entries)))
 
 (defun auth-source-pass--find-one-by-entry-name (entryname user)
