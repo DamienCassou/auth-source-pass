@@ -52,17 +52,17 @@
 
 This is useful if your password store contains multiple entries
 that match a search, some of which 'auth-source-pass` doesn't
-parse successfully. Without validation during search the first
-matching entry found will be returned. If it doesn't parse it
+parse successfully.  Without validation during search the first
+matching entry found will be returned.  If it doesn't parse it
 will prevent finding a entry later in the search sequence that
 might have matched.
 
-Validation during search is enabled by default. Consider
+Validation during search is enabled by default.  Consider
 disabling it if your password store is protected by a solution
 that requires a physical action on each cryptographic operation
 such as a PGP smartcard with touch required to complete those
 operations so that retrieving a password typically only requires
-one physical action. If you do so, care in ensuring that entries
+one physical action.  If you do so, care in ensuring that entries
 parse successfully is recommended."
   :type 'boolean)
 
