@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/DamienCassou/auth-password-store.svg)](https://travis-ci.org/DamienCassou/auth-password-store)
+[![Build Status](https://travis-ci.org/DamienCassou/auth-password-store.svg?branch=master)](https://travis-ci.org/DamienCassou/auth-password-store)
 
 # auth-source-pass (aka. auth-password-store)
 
