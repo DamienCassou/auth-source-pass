@@ -24,8 +24,8 @@ repository. Follow the guidelines below to make sure everything goes smoothly.
 
 ### Naming
 
-- Use a `auth-password-store-` prefix for all public names.
-- Use a `auth-password-store--` prefix for all internal names.
+- Use a `auth-source-pass-` prefix for all public names.
+- Use a `auth-source-pass--` prefix for all internal names.
 
 ### Docstrings
 
