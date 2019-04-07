@@ -48,7 +48,7 @@
   :type 'directory)
 
 (defcustom auth-source-pass-port-separator ":"
-  "Separator string between host and port in password filename."
+  "Separator string between host and port in entry filename."
   :type 'string)
 
 (cl-defun auth-source-pass-search (&rest spec

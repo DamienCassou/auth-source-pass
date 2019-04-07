@@ -57,6 +57,9 @@ host (e.g., web and mail), you can add a colon and the port number (or
 service name) at the end of the filename: e.g., `host:443.gpg` or
 `host:imap.gpg`.
 
+The separator string (default: colon) between host and port number
+can be customized by `auth-source-pass-port-separator` variable.
+
 Be aware that the .gpg extension is added automatically by the `pass`
 utility. You should not include that in the name when you create the
 entry. For example to create a multi-line entry with `pass`:
