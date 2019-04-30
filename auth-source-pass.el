@@ -76,11 +76,12 @@ See `auth-source-search' for details on SPEC."
   "Build auth-source-pass entry matching HOST, PORT and USER."
   (let ((entry (auth-source-pass--find-match host user port)))
     (when entry
-      (let ((retval (list
-                     :host host
-                     :port (or (auth-source-pass-get "port" entry) port)
-                     :user (or (auth-source-pass-get "user" entry) user)
-                     :secret (lambda () (auth-source-pass-get 'secret entry)))))
+      (let* ((entry-data (auth-source-pass-parse-entry entry))
+             (retval (list
+                      :host host
+                      :port (or (auth-source-pass--get-attr "port" entry-data) port)
+                      :user (or (auth-source-pass--get-attr "user" entry-data) user)
+                      :secret (lambda () (auth-source-pass--get-attr 'secret entry-data)))))
         (auth-source-pass--do-debug "return %s as final result (plus hidden password)"
                                     (seq-subseq retval 0 -2)) ;; remove password
         retval))))
@@ -125,9 +126,23 @@ secret
 key1: value1
 key2: value2"
   (let ((data (auth-source-pass-parse-entry entry)))
-    (or (cdr (assoc key data))
-        (and (string= key "user")
-             (cdr (assoc "username" data))))))
+    (auth-source-pass--get-attr key data)))
+
+(defun auth-source-pass--get-attr (key entry-data)
+  "Return the value associated to KEY in data from an already parsed entry.
+
+ENTRY-DATA is the data from a parsed password-store entry.
+The key used to retrieve the password is the symbol `secret'.
+
+The convention used as the format for a password-store file is
+the following (see http://www.passwordstore.org/#organization):
+
+secret
+key1: value1
+key2: value2"
+  (or (cdr (assoc key entry-data))
+      (and (string= key "user")
+           (cdr (assoc "username" entry-data)))))
 
 (defun auth-source-pass--read-entry (entry)
   "Return a string with the file content of ENTRY."
