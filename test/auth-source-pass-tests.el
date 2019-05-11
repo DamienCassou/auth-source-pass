@@ -72,8 +72,7 @@ This function is intended to be set to `auth-source-debug`."
               (lambda (entry)
                 (add-to-list 'auth-source-pass--parse-log entry)
                 (cdr (cl-find entry ,store :key #'car :test #'string=))))
-             ((symbol-function 'auth-source-pass-entries) (lambda () (mapcar #'car ,store)))
-             ((symbol-function 'auth-source-pass--entry-valid-p) (lambda (_entry) t)))
+             ((symbol-function 'auth-source-pass-entries) (lambda () (mapcar #'car ,store))))
      (let ((auth-source-debug #'auth-source-pass--debug)
            (auth-source-pass--debug-log nil)
            (auth-source-pass--parse-log nil))
@@ -327,16 +326,6 @@ This function is intended to be set to `auth-source-debug`."
                   nil))
    (should (equal (auth-source-pass--find-match "baz.site.com" "scott" nil)
                   '(("secret" . "mail/baz.site.com/scott password"))))))
-
-(ert-deftest auth-source-pass-entry-is-not-valid-when-unreadable ()
-  (cl-letf (((symbol-function 'auth-source-pass--read-entry)
-             (lambda (entry)
-               ;; only foo is a valid entry
-               (if (string-equal entry "foo")
-                   "password"
-                 nil))))
-    (should (auth-source-pass--entry-valid-p "foo"))
-    (should-not (auth-source-pass--entry-valid-p "bar"))))
 
 (ert-deftest auth-source-pass-can-start-from-auth-source-search ()
   (auth-source-pass--with-store '(("gitlab.com" ("user" . "someone")))
