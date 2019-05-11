@@ -184,33 +184,6 @@ CONTENTS is the contents of a password-store formatted file."
          (cons (concat "auth-source-pass: " (car msg))
                (cdr msg))))
 
-(defun auth-source-pass--select-one-entry (entries user)
-  "Select one entry from ENTRIES by searching for a field matching USER."
-  (let ((number (length entries))
-        (entry-with-user
-         (and user
-              (seq-find (lambda (entry)
-                          (string-equal (auth-source-pass-get "user" entry) user))
-                        entries))))
-    (auth-source-pass--do-debug "found %s matches: %s" number
-                                (mapconcat #'identity entries ", "))
-    (if entry-with-user
-        (progn
-          (auth-source-pass--do-debug "return %s as it contains matching user field"
-                                      entry-with-user)
-          entry-with-user)
-      (auth-source-pass--do-debug "return %s as it is the first one" (car entries))
-      (car entries))))
-
-(defun auth-source-pass--entry-valid-p (entry)
-  "Return t iff ENTRY can be opened.
-Also displays a warning if not.  This function is slow, don't call it too
-often."
-  (if (auth-source-pass-parse-entry entry)
-      t
-    (auth-source-pass--do-debug "entry '%s' is not valid" entry)
-    nil))
-
 ;; TODO: add tests for that when `assess-with-filesystem' is included
 ;; in Emacs
 (defun auth-source-pass-entries ()
