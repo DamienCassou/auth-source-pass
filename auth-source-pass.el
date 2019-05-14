@@ -262,6 +262,22 @@ auth-source-pass expects, most specific to least specific."
       (auth-source-pass--do-debug "no matches found"))
     entries-lists))
 
+(defun auth-source-pass-match-entry-p (entry hostname &optional user port)
+  "Return non-nil iff an ENTRY matching the parameters is found in store.
+
+HOSTNAME, USER and PORT are passed unchanged to
+`auth-source-pass--matching-entries'."
+  (cl-find-if
+   (lambda (entries) (cl-find entry entries :test #'string=))
+   (auth-source-pass--matching-entries hostname user port)))
+
+(defun auth-source-pass-match-any-entry-p (hostname &optional user port)
+  "Return non-nil iff there is at least one entry matching the parameters.
+
+HOSTNAME, USER and PORT are passed unchanged to
+`auth-source-pass--matching-entries'."
+  (cl-find-if #'identity (auth-source-pass--matching-entries hostname user port)))
+
 (defun auth-source-pass--accumulate-matches (hostname user port)
   "Accumulate matching password-store entries into sublists.
 
