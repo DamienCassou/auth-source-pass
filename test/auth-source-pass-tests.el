@@ -52,11 +52,21 @@
 (defvar auth-source-pass--debug-log nil
   "Contains a list of all messages passed to `auth-source-do-debug`.")
 
-(defun auth-source-pass--should-have-message-containing (regexp)
-  "Assert that at least one `auth-source-do-debug` matched REGEXP."
-  (should (seq-find (lambda (message)
-                      (string-match regexp message))
-                    auth-source-pass--debug-log)))
+(defun auth-source-pass--have-message-matching (regexp)
+  "Return non-nil iff at least one `auth-source-do-debug` match REGEXP."
+  (seq-find (lambda (message)
+              (string-match regexp message))
+            auth-source-pass--debug-log))
+
+(defun auth-source-pass--explain--have-message-matching (regexp)
+  "Explainer function for `auth-source-pass--have-message-matching'.
+REGEXP is the same as in `auth-source-pass--have-message-matching'."
+  `(regexp
+    ,regexp
+    messages
+    ,(mapconcat #'identity auth-source-pass--debug-log "\n- ")))
+
+(put #'auth-source-pass--have-message-matching 'ert-explainer #'auth-source-pass--explain--have-message-matching)
 
 (defun auth-source-pass--debug (&rest msg)
   "Format MSG and add that to `auth-source-pass--debug-log`.
@@ -288,7 +298,10 @@ HOSTNAME, USER and PORT are the same as in `auth-source-pass-match-any-entry-p'.
     ;; match even if a port is asked for
     (should (auth-source-pass-match-entry-p "bar.com" "bar.com" nil "8080"))
     ;; match even if a user and a port are asked for
-    (should (auth-source-pass-match-entry-p "bar.com" "bar.com" "user" "8080"))))
+    (should (auth-source-pass-match-entry-p "bar.com" "bar.com" "user" "8080"))
+    ;; don't match if a '.' is replaced with another character
+    (auth-source-pass--with-store '(("barXcom"))
+      (should-not (auth-source-pass-match-any-entry-p "bar.com" nil nil)))))
 
 (ert-deftest auth-source-pass--matching-entries-find-entries-with-a-username ()
   (auth-source-pass--with-store '(("user@foo"))
@@ -380,6 +393,24 @@ HOSTNAME, USER and PORT are the same as in `auth-source-pass-match-any-entry-p'.
     (let ((result (car (auth-source-search :host "gitlab.com"))))
       (should (equal (plist-get result :user) "someone"))
       (should (equal (plist-get result :host) "gitlab.com")))))
+
+(ert-deftest auth-source-pass-prints-meaningful-debug-log ()
+  (auth-source-pass--with-store '()
+    (auth-source-pass--find-match "gitlab.com" nil nil)
+    (should (auth-source-pass--have-message-matching
+             "entries matching hostname=\"gitlab.com\""))
+    (should (auth-source-pass--have-message-matching
+             "corresponding suffixes to search for: .*\"gitlab.com\""))
+    (should (auth-source-pass--have-message-matching
+             "found no entries matching \"gitlab.com\"")))
+  (auth-source-pass--with-store '(("gitlab.com"))
+    (auth-source-pass--find-match "gitlab.com" nil nil)
+    (should (auth-source-pass--have-message-matching
+             "found 1 entry matching \"gitlab.com\": \"gitlab.com\"")))
+  (auth-source-pass--with-store '(("a/gitlab.com") ("b/gitlab.com"))
+    (auth-source-pass--find-match "gitlab.com" nil nil)
+    (should (auth-source-pass--have-message-matching
+             "found 2 entries matching \"gitlab.com\": (\"a/gitlab.com\" \"b/gitlab.com\")"))))
 
 (provide 'auth-source-pass-tests)
 

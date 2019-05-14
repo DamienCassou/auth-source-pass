@@ -221,9 +221,7 @@ If many matches are found, return the first one.  If no match is found,
 return nil.
 
 HOSTNAME should not contain any username or port number."
-  (let* ((entries-lists (auth-source-pass--matching-entries hostname user port))
-         ;; get the most-specific matching entries
-         (entries (cl-find-if #'identity entries-lists)))
+  (let* ((entries (auth-source-pass--best-matching-entries hostname user port)))
     (pcase (length entries)
       (0 nil)
       (1 (auth-source-pass-parse-entry (car entries)))
@@ -240,21 +238,35 @@ matching USER."
         (when (or (not user) (equal (auth-source-pass--get-attr "user" entry-data) user))
           (throw 'auth-source-pass-break entry-data))))))
 
-(defun auth-source-pass--matching-entries (hostname user port)
-  "Return all matching password-store entries for HOSTNAME, USER, & PORT.
+(defun auth-source-pass--best-matching-entries (hostname &optional user port)
+  "Return the password-entries best matching HOSTNAME, USER and PORT."
+  (let ((suffixes (auth-source-pass--generate-entry-suffixes hostname user port)))
+    (auth-source-pass--do-debug "searching for entries matching hostname=%S, user=%S, port=%S"
+                                hostname (or user "") (or port ""))
+    (auth-source-pass--do-debug "corresponding suffixes to search for: %S" suffixes)
+    (catch 'auth-source-pass-break
+      (dolist (suffix suffixes)
+        (let ((entries (auth-source-pass--entries-matching-suffix suffix)))
+          (pcase (length entries)
+            (0 (auth-source-pass--do-debug "found no entries matching %S" suffix))
+            (1 (auth-source-pass--do-debug "found 1 entry matching %S: %S"
+                                           suffix
+                                           (car entries)))
+            (_ (auth-source-pass--do-debug "found %s entries matching %S: %S"
+                                           (length entries)
+                                           suffix
+                                           entries)))
+          (if entries (throw 'auth-source-pass-break entries)))))))
 
-The result is a list of lists of password-store entries, where
-each sublist contains entries that actually exist in the
-password-store matching one of the entry name formats that
-auth-source-pass expects, most specific to least specific."
-  (let* ((entries-lists (mapcar
-                         #'cdr
-                         (auth-source-pass--accumulate-matches hostname user port)))
-         (entries (apply #'cl-concatenate (cons 'list entries-lists))))
-    (if entries
-        (auth-source-pass--do-debug (format "found: %S" entries))
-      (auth-source-pass--do-debug "no matches found"))
-    entries-lists))
+(defun auth-source-pass--matching-entries (hostname &optional user port)
+  "Return password-store entries matching HOSTNAME, USER, PORT.
+
+The result is a list of lists of password-store entries.  Each
+sublist contains the password-store entries whose names match a
+suffix in `auth-source-pass--generate-entry-suffixes'.  The
+result is ordered the same way as the suffixes."
+  (mapcar #'auth-source-pass--entries-matching-suffix
+          (auth-source-pass--generate-entry-suffixes hostname user port)))
 
 (defun auth-source-pass-match-entry-p (entry hostname &optional user port)
   "Return non-nil iff an ENTRY matching the parameters is found in store.
@@ -272,31 +284,13 @@ HOSTNAME, USER and PORT are passed unchanged to
 `auth-source-pass--matching-entries'."
   (cl-find-if #'identity (auth-source-pass--matching-entries hostname user port)))
 
-(defun auth-source-pass--accumulate-matches (hostname user port)
-  "Accumulate matching password-store entries into sublists.
-
-Entries matching supported formats that combine HOSTNAME, USER, &
-PORT are accumulated into sublists where the car of each sublist
-is a regular expression for matching paths in the password-store
-and the remainder is the list of matching entries."
-  (let ((suffix-match-lists
-         (mapcar (lambda (suffix) (list (format "\\(^\\|/\\)%s$" suffix)))
-                 (auth-source-pass--generate-entry-suffixes hostname user port))))
-    (cl-reduce #'auth-source-pass--entry-reducer
-               (auth-source-pass-entries)
-               :initial-value suffix-match-lists)))
-
-(defun auth-source-pass--entry-reducer (match-lists entry)
-  "Match MATCH-LISTS sublists against ENTRY.
-
-The result is a copy of match-lists with the entry added to the
-end of any sublists for which the regular expression at the head
-of the list matches the entry name."
-  (mapcar (lambda (match-list)
-            (if (string-match (car match-list) entry)
-                (append match-list (list entry))
-              match-list))
-          match-lists))
+(defun auth-source-pass--entries-matching-suffix (suffix)
+  "Return the list of entries matching SUFFIX."
+  (cl-remove-if-not
+   (lambda (entry) (string-match-p
+               (format "\\(^\\|/\\)%s$" (regexp-quote suffix))
+               entry))
+   (auth-source-pass-entries)))
 
 (defun auth-source-pass--generate-entry-suffixes (hostname user port)
   "Return a list of possible entry path suffixes in the password-store.
