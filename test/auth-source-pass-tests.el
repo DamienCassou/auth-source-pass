@@ -265,7 +265,10 @@ HOSTNAME, USER and PORT are the same as in `auth-source-pass-match-any-entry-p'.
       (should (equal auth-source-pass--parse-log '("bar.baz"))))
     (auth-source-pass--with-store store-contents
       (auth-source-pass--find-match "baz" nil nil)
-      (should (equal auth-source-pass--parse-log '("baz"))))))
+      (should (equal auth-source-pass--parse-log '("baz"))))
+    (auth-source-pass--with-store '(("dir1/bar.com") ("dir2/bar.com") ("dir3/bar.com"))
+      (auth-source-pass--find-match "bar.com" nil nil)
+      (should (= (length auth-source-pass--parse-log) 1)))))
 
 (ert-deftest auth-source-pass--find-match-return-parsed-data ()
   (auth-source-pass--with-store '(("bar.com" ("key" . "val")))

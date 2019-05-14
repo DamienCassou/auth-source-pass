@@ -234,17 +234,11 @@ HOSTNAME should not contain any username or port number."
 
 If USER is non nil, give precedence to entries containing a user field
 matching USER."
-  (cl-reduce
-   (lambda (result entry)
-     (let ((entry-data (auth-source-pass-parse-entry entry)))
-       (cond ((equal (auth-source-pass--get-attr "user" result) user)
-              result)
-             ((equal (auth-source-pass--get-attr "user" entry-data) user)
-              entry-data)
-             (t
-              result))))
-   entries
-   :initial-value (auth-source-pass-parse-entry (car entries))))
+  (catch 'auth-source-pass-break
+    (dolist (entry entries)
+      (let ((entry-data (auth-source-pass-parse-entry entry)))
+        (when (or (not user) (equal (auth-source-pass--get-attr "user" entry-data) user))
+          (throw 'auth-source-pass-break entry-data))))))
 
 (defun auth-source-pass--matching-entries (hostname user port)
   "Return all matching password-store entries for HOSTNAME, USER, & PORT.
