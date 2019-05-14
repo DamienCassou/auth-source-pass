@@ -214,15 +214,13 @@ If many matches are found, return the first one.  If no match is found,
 return nil.
 
 HOSTNAME should not contain any username or port number."
-  (cl-reduce
-   (lambda (result entries)
-     (or result
-         (pcase (length entries)
-           (0 nil)
-           (1 (auth-source-pass-parse-entry (car entries)))
-           (_ (auth-source-pass--select-from-entries entries user)))))
-   (auth-source-pass--matching-entries hostname user port)
-   :initial-value nil))
+  (let* ((entries-lists (auth-source-pass--matching-entries hostname user port))
+         ;; get the most-specific matching entries
+         (entries (cl-find-if #'identity entries-lists)))
+    (pcase (length entries)
+      (0 nil)
+      (1 (auth-source-pass-parse-entry (car entries)))
+      (_ (auth-source-pass--select-from-entries entries user)))))
 
 (defun auth-source-pass--select-from-entries (entries user)
   "Return best matching password-store entry data from ENTRIES.
