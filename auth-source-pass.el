@@ -199,10 +199,17 @@ CONTENTS is the contents of a password-store formatted file."
 
 Disambiguate between user provided inside HOST (e.g., user@server.com) and
 inside USER by giving priority to USER.  Same for PORT."
+  (apply #'auth-source-pass--find-match-unambiguous (auth-source-pass--disambiguate host user port)))
+
+(defun auth-source-pass--disambiguate (host &optional user port)
+  "Return (HOST USER PORT) after disambiguation.
+Disambiguate between having user provided inside HOST (e.g.,
+user@server.com) and inside USER by giving priority to USER.
+Same for PORT."
   (let* ((url (url-generic-parse-url (if (string-match-p ".*://" host)
                                          host
                                        (format "https://%s" host)))))
-    (auth-source-pass--find-match-unambiguous
+    (list
      (or (url-host url) host)
      (or user (url-user url))
      ;; url-port returns 443 (because of the https:// above) by default

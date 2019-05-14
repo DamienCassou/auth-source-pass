@@ -93,6 +93,101 @@ This function is intended to be set to `auth-source-debug`."
                                   ("bar"))
     (should-not (auth-source-pass-search :host "baz"))))
 
+(ert-deftest auth-source-pass--disambiguate-extract-host-from-hostname ()
+  ;; no user or port
+  (should (equal (cl-first (auth-source-pass--disambiguate "foo")) "foo"))
+  ;; only user
+  (should (equal (cl-first (auth-source-pass--disambiguate "user@foo")) "foo"))
+  ;; only port
+  (should (equal (cl-first (auth-source-pass--disambiguate "https://foo")) "foo"))
+  (should (equal (cl-first (auth-source-pass--disambiguate "foo:80")) "foo"))
+  ;; both user and port
+  (should (equal (cl-first (auth-source-pass--disambiguate "https://user@foo")) "foo"))
+  (should (equal (cl-first (auth-source-pass--disambiguate "user@foo:80")) "foo"))
+  ;; all of the above with a trailing path
+  (should (equal (cl-first (auth-source-pass--disambiguate "foo/path")) "foo"))
+  (should (equal (cl-first (auth-source-pass--disambiguate "user@foo/path")) "foo"))
+  (should (equal (cl-first (auth-source-pass--disambiguate "https://foo/path")) "foo"))
+  (should (equal (cl-first (auth-source-pass--disambiguate "foo:80/path")) "foo"))
+  (should (equal (cl-first (auth-source-pass--disambiguate "https://user@foo/path")) "foo"))
+  (should (equal (cl-first (auth-source-pass--disambiguate "user@foo:80/path")) "foo")))
+
+(ert-deftest auth-source-pass--disambiguate-extract-user-from-hostname ()
+  ;; no user or port
+  (should (equal (cl-second (auth-source-pass--disambiguate "foo")) nil))
+  ;; only user
+  (should (equal (cl-second (auth-source-pass--disambiguate "user@foo")) "user"))
+  ;; only port
+  (should (equal (cl-second (auth-source-pass--disambiguate "https://foo")) nil))
+  (should (equal (cl-second (auth-source-pass--disambiguate "foo:80")) nil))
+  ;; both user and port
+  (should (equal (cl-second (auth-source-pass--disambiguate "https://user@foo")) "user"))
+  (should (equal (cl-second (auth-source-pass--disambiguate "user@foo:80")) "user"))
+  ;; all of the above with a trailing path
+  (should (equal (cl-second (auth-source-pass--disambiguate "foo/path")) nil))
+  (should (equal (cl-second (auth-source-pass--disambiguate "user@foo/path")) "user"))
+  (should (equal (cl-second (auth-source-pass--disambiguate "https://foo/path")) nil))
+  (should (equal (cl-second (auth-source-pass--disambiguate "foo:80/path")) nil))
+  (should (equal (cl-second (auth-source-pass--disambiguate "https://user@foo/path")) "user"))
+  (should (equal (cl-second (auth-source-pass--disambiguate "user@foo:80/path")) "user")))
+
+(ert-deftest auth-source-pass--disambiguate-prefer-user-parameter ()
+  ;; no user or port
+  (should (equal (cl-second (auth-source-pass--disambiguate "foo" "user2")) "user2"))
+  ;; only user
+  (should (equal (cl-second (auth-source-pass--disambiguate "user@foo" "user2")) "user2"))
+  ;; only port
+  (should (equal (cl-second (auth-source-pass--disambiguate "https://foo" "user2")) "user2"))
+  (should (equal (cl-second (auth-source-pass--disambiguate "foo:80" "user2")) "user2"))
+  ;; both user and port
+  (should (equal (cl-second (auth-source-pass--disambiguate "https://user@foo" "user2")) "user2"))
+  (should (equal (cl-second (auth-source-pass--disambiguate "user@foo:80" "user2")) "user2"))
+  ;; all of the above with a trailing path
+  (should (equal (cl-second (auth-source-pass--disambiguate "foo/path" "user2")) "user2"))
+  (should (equal (cl-second (auth-source-pass--disambiguate "user@foo/path" "user2")) "user2"))
+  (should (equal (cl-second (auth-source-pass--disambiguate "https://foo/path" "user2")) "user2"))
+  (should (equal (cl-second (auth-source-pass--disambiguate "foo:80/path" "user2")) "user2"))
+  (should (equal (cl-second (auth-source-pass--disambiguate "https://user@foo/path" "user2")) "user2"))
+  (should (equal (cl-second (auth-source-pass--disambiguate "user@foo:80/path" "user2")) "user2")))
+
+(ert-deftest auth-source-pass--disambiguate-extract-port-from-hostname ()
+  ;; no user or port
+  (should (equal (cl-third (auth-source-pass--disambiguate "foo")) "443"))
+  ;; only user
+  (should (equal (cl-third (auth-source-pass--disambiguate "user@foo")) "443"))
+  ;; only port
+  (should (equal (cl-third (auth-source-pass--disambiguate "https://foo")) "443"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "foo:80")) "80"))
+  ;; both user and port
+  (should (equal (cl-third (auth-source-pass--disambiguate "https://user@foo")) "443"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "user@foo:80")) "80"))
+  ;; all of the above with a trailing path
+  (should (equal (cl-third (auth-source-pass--disambiguate "foo/path")) "443"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "user@foo/path")) "443"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "https://foo/path")) "443"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "foo:80/path")) "80"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "https://user@foo/path")) "443"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "user@foo:80/path")) "80")))
+
+(ert-deftest auth-source-pass--disambiguate-prefer-port-parameter ()
+  ;; no user or port
+  (should (equal (cl-third (auth-source-pass--disambiguate "foo" "user2" "8080")) "8080"))
+  ;; only user
+  (should (equal (cl-third (auth-source-pass--disambiguate "user@foo" "user2" "8080")) "8080"))
+  ;; only port
+  (should (equal (cl-third (auth-source-pass--disambiguate "https://foo" "user2" "8080")) "8080"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "foo:80" "user2" "8080")) "8080"))
+  ;; both user and port
+  (should (equal (cl-third (auth-source-pass--disambiguate "https://user@foo" "user2" "8080")) "8080"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "user@foo:80" "user2" "8080")) "8080"))
+  ;; all of the above with a trailing path
+  (should (equal (cl-third (auth-source-pass--disambiguate "foo/path" "user2" "8080")) "8080"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "user@foo/path" "user2" "8080")) "8080"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "https://foo/path" "user2" "8080")) "8080"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "foo:80/path" "user2" "8080")) "8080"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "https://user@foo/path" "user2" "8080")) "8080"))
+  (should (equal (cl-third (auth-source-pass--disambiguate "user@foo:80/path" "user2" "8080")) "8080")))
+
 (ert-deftest auth-source-pass-find-match-minimal-parsing ()
   (let ((store-contents
          '(("baz")
