@@ -78,6 +78,55 @@ This function is intended to be set to `auth-source-debug`."
            (auth-source-pass--parse-log nil))
        ,@body)))
 
+(defun auth-source-pass--explain-match-entry-p (entry hostname &optional user port)
+  "Explainer function for `auth-source-pass-match-entry-p'.
+
+ENTRY, HOSTNAME, USER and PORT are the same as in `auth-source-pass-match-entry-p'."
+  `(entry
+    ,entry
+    store
+    ,(auth-source-pass-entries)
+    matching-entries
+    ,(auth-source-pass--matching-entries hostname user port)))
+
+(put 'auth-source-pass-match-entry-p 'ert-explainer #'auth-source-pass--explain-match-entry-p)
+
+(defun auth-source-pass--includes-sorted-entries (entries hostname &optional user port)
+  "Return non-nil iff ENTRIES matching the parameters are found in store.
+ENTRIES should be sorted from most specific to least specific.
+
+HOSTNAME, USER and PORT are passed unchanged to
+`auth-source-pass--matching-entries'."
+  (if (seq-empty-p entries)
+      t
+    (and
+     (auth-source-pass-match-entry-p (car entries) hostname user port)
+     (auth-source-pass--includes-sorted-entries (cdr entries) hostname user port))))
+
+(defun auth-source-pass--explain-includes-sorted-entries (entries hostname &optional user port)
+  "Explainer function for `auth-source-pass--includes-sorted-entries'.
+
+ENTRIES, HOSTNAME, USER and PORT are the same as in `auth-source-pass--includes-sorted-entries'."
+  `(store
+    ,(auth-source-pass-entries)
+    matching-entries
+    ,(auth-source-pass--matching-entries hostname user port)
+    entries
+    ,entries))
+
+(put 'auth-source-pass--includes-sorted-entries 'ert-explainer #'auth-source-pass--explain-includes-sorted-entries)
+
+(defun auth-source-pass--explain-match-any-entry-p (hostname &optional user port)
+  "Explainer function for `auth-source-pass-match-any-entry-p'.
+
+HOSTNAME, USER and PORT are the same as in `auth-source-pass-match-any-entry-p'."
+  `(store
+    ,(auth-source-pass-entries)
+    matching-entries
+    ,(auth-source-pass--matching-entries hostname user port)))
+
+(put 'auth-source-pass-match-any-entry-p 'ert-explainer #'auth-source-pass--explain-match-any-entry-p)
+
 (ert-deftest auth-source-pass-any-host ()
   (auth-source-pass--with-store '(("foo" ("port" . "foo-port") ("host" . "foo-user"))
                                   ("bar"))
@@ -218,154 +267,81 @@ This function is intended to be set to `auth-source-debug`."
       (auth-source-pass--find-match "baz" nil nil)
       (should (equal auth-source-pass--parse-log '("baz"))))))
 
-(ert-deftest auth-source-pass-find-match-matching-at-entry-name ()
-  (auth-source-pass--with-store
-      '(("foo" ("secret" . "foo password")))
-    (let ((result (auth-source-pass--find-match "foo" nil nil)))
-      (should (equal (auth-source-pass--get-attr "secret" result)
-                     "foo password")))))
+(ert-deftest auth-source-pass--find-match-return-parsed-data ()
+  (auth-source-pass--with-store '(("bar.com" ("key" . "val")))
+    (should (consp (auth-source-pass--find-match "bar.com" nil nil))))
+  (auth-source-pass--with-store '(("dir1/bar.com" ("key1" . "val1")) ("dir2/bar.com" ("key2" . "val2")))
+    (should (consp (auth-source-pass--find-match "bar.com" nil nil)))))
 
-(ert-deftest auth-source-pass-find-match-matching-at-entry-name-part ()
-  (auth-source-pass--with-store
-      '(("foo" ("secret" . "foo password")))
-    (let ((result (auth-source-pass--find-match "https://foo" nil nil)))
-      (should (equal (auth-source-pass--get-attr "secret" result)
-                     "foo password")))))
-
-(ert-deftest auth-source-pass-find-match-matching-at-entry-name-ignoring-user ()
-  (auth-source-pass--with-store
-      '(("foo" ("secret" . "foo password")))
-    (let ((result (auth-source-pass--find-match "https://SomeUser@foo" nil nil)))
-      (should (equal (auth-source-pass--get-attr "secret" result)
-                     "foo password")))))
-
-(ert-deftest auth-source-pass-find-match-matching-at-entry-name-with-user ()
-  (auth-source-pass--with-store
-      '(("SomeUser@foo" ("secret" . "SomeUser@foo password")))
-    (let ((result (auth-source-pass--find-match "https://SomeUser@foo" nil nil)))
-      (should (equal (auth-source-pass--get-attr "secret" result)
-                     "SomeUser@foo password")))))
-
-(ert-deftest auth-source-pass-find-match-matching-at-entry-name-prefer-full ()
-  (auth-source-pass--with-store
-      '(("SomeUser@foo" ("secret" . "SomeUser@foo password"))
-        ("foo" ("secret" . "foo password")))
-    (let ((result (auth-source-pass--find-match "https://SomeUser@foo" nil nil)))
-      (should (equal (auth-source-pass--get-attr "secret" result)
-                     "SomeUser@foo password")))))
-
-(ert-deftest auth-source-pass-find-match-matching-at-entry-name-prefer-full-reversed ()
-  (auth-source-pass--with-store
-      '(("foo" ("secret" . "foo password"))
-        ("SomeUser@foo" ("secret" . "SomeUser@foo password")))
-    (let ((result (auth-source-pass--find-match "https://SomeUser@foo" nil nil)))
-      (should (equal (auth-source-pass--get-attr "secret" result)
-                     "SomeUser@foo password")))))
-
-(ert-deftest auth-source-pass-matching-entries-name-without-subdomain ()
+(ert-deftest auth-source-pass--matching-entries ()
   (auth-source-pass--with-store '(("bar.com"))
-    (should (equal (auth-source-pass--matching-entries "foo.bar.com" nil nil)
-                   '(nil ("bar.com") nil)))))
+    (should (auth-source-pass-match-entry-p "bar.com" "bar.com"))
+    ;; match even if sub-domain is asked for
+    (should (auth-source-pass-match-entry-p "bar.com" "foo.bar.com"))
+    ;; match even if a user is asked for
+    (should (auth-source-pass-match-entry-p "bar.com" "bar.com" "user"))
+    ;; match even if user as an @ sign
+    (should (auth-source-pass-match-entry-p "bar.com" "bar.com" "user@someplace"))
+    ;; match even if a port is asked for
+    (should (auth-source-pass-match-entry-p "bar.com" "bar.com" nil "8080"))
+    ;; match even if a user and a port are asked for
+    (should (auth-source-pass-match-entry-p "bar.com" "bar.com" "user" "8080"))))
 
-(ert-deftest auth-source-pass-matching-entries-name-without-subdomain-with-user ()
-  (auth-source-pass--with-store '(("someone@bar.com"))
-    (should (equal (auth-source-pass--matching-entries "foo.bar.com" "someone" nil)
-                   '(nil nil nil ("someone@bar.com") nil nil nil nil nil)))))
+(ert-deftest auth-source-pass--matching-entries-find-entries-with-a-username ()
+  (auth-source-pass--with-store '(("user@foo"))
+    (should (auth-source-pass-match-entry-p "user@foo" "foo" "user")))
+  ;; match even if sub-domain is asked for
+  (auth-source-pass--with-store '(("user@bar.com"))
+    (should (auth-source-pass-match-entry-p "user@bar.com" "foo.bar.com" "user")))
+  ;; don't match if no user is asked for
+  (auth-source-pass--with-store '(("user@foo"))
+    (should-not (auth-source-pass-match-any-entry-p "foo")))
+  ;; don't match if user is different
+  (auth-source-pass--with-store '(("user1@foo"))
+    (should-not (auth-source-pass-match-any-entry-p "foo" "user2")))
+  ;; don't match if sub-domain is asked for but user is different
+  (auth-source-pass--with-store '(("user1@bar.com"))
+    (should-not (auth-source-pass-match-any-entry-p "foo.bar.com" "user2"))))
 
-(ert-deftest auth-source-pass-matching-entries-name-without-subdomain-with-bad-user ()
-  (auth-source-pass--with-store '(("someoneelse@bar.com"))
-    (should (equal (auth-source-pass--matching-entries "foo.bar.com" "someone" nil)
-                   '(nil nil nil nil nil nil nil nil nil)))))
+(ert-deftest auth-source-pass--matching-entries-find-entries-with-a-port ()
+  (auth-source-pass--with-store '(("bar.com:8080"))
+    (should (auth-source-pass-match-entry-p "bar.com:8080" "bar.com" nil "8080"))))
 
-(ert-deftest auth-source-pass-matching-entries-name-without-subdomain-prefer-full ()
-  (auth-source-pass--with-store '(("bar.com") ("foo.bar.com"))
-    (should (equal (auth-source-pass--matching-entries "foo.bar.com" nil nil)
-                   '(("foo.bar.com") ("bar.com") nil)))))
+(ert-deftest auth-source-pass--matching-entries-find-entries-with-slash ()
+  ;; match if entry filename matches user
+  (auth-source-pass--with-store '(("foo.com/user"))
+    (should (auth-source-pass-match-entry-p "foo.com/user" "foo.com" "user")))
+  ;; match with port if entry filename matches user
+  (auth-source-pass--with-store '(("foo.com:8080/user"))
+    (should (auth-source-pass-match-entry-p "foo.com:8080/user" "foo.com" "user" "8080")))
+  ;; don't match if entry filename doesn't match user
+  (auth-source-pass--with-store '(("foo.com/baz"))
+    (should-not (auth-source-pass-match-any-entry-p "foo.com" "user"))))
 
-(ert-deftest auth-source-pass-dont-match-at-folder-name ()
-  (auth-source-pass--with-store '(("foo.bar.com/foo"))
-    (should (equal (auth-source-pass--matching-entries "foo.bar.com" nil nil)
-                   '(nil nil nil)))))
-
-(ert-deftest auth-source-pass-matching-entries-host-port-and-subdir-user ()
-  (auth-source-pass--with-store '(("bar.com:443/someone"))
-    (should (equal (auth-source-pass--matching-entries "bar.com" "someone" "443")
-                   '(nil ("bar.com:443/someone") nil nil nil nil
-                         nil nil nil nil nil nil)))))
-
-(ert-deftest auth-source-pass-matching-entries-host-port-and-subdir-user-with-custom-separator ()
+(ert-deftest auth-source-pass-matching-entries-with-custom-separator ()
   (let ((auth-source-pass-port-separator "#"))
     (auth-source-pass--with-store '(("bar.com#443/someone"))
-      (should (equal (auth-source-pass--matching-entries "bar.com" "someone" "443")
-                     '(nil ("bar.com#443/someone") nil nil nil nil
-                           nil nil nil nil nil nil))))))
+      (should (auth-source-pass-match-entry-p "bar.com#443/someone" "bar.com" "someone" "443")))))
 
-(ert-deftest auth-source-pass-matching-entries-extracting-user-from-host ()
-  (auth-source-pass--with-store
-      '(("foo.com/bar" ("secret" . "foo.com/bar password")))
-    (let ((result (auth-source-pass--find-match "https://bar@foo.com" nil nil)))
-      (should (equal (auth-source-pass--get-attr "secret" result)
-                     "foo.com/bar password")))))
-
-(ert-deftest auth-source-pass-matching-entries-with-user-first ()
+(ert-deftest auth-source-pass--matching-entries-sort-results ()
+  (auth-source-pass--with-store '(("user@foo") ("foo"))
+    (should (auth-source-pass--includes-sorted-entries '("user@foo" "foo") "foo" "user")))
+  ;; same, but store is reversed
   (auth-source-pass--with-store '(("foo") ("user@foo"))
-    (should (equal (auth-source-pass--matching-entries "foo" "user" nil)
-                   '(("user@foo") nil ("foo"))))
-    (auth-source-pass--should-have-message-containing "found: (\"user@foo\" \"foo\"")))
-
-(ert-deftest auth-source-pass-give-priority-to-desired-user ()
-  (auth-source-pass--with-store
-      '(("foo" ("secret" . "foo password"))
-        ("subdir/foo" ("secret" . "subdir/foo password") ("user" . "someone")))
-    (let ((result (auth-source-pass--find-match "foo" "someone" nil)))
-      (should (equal (auth-source-pass--get-attr "secret" result)
-                     "subdir/foo password"))
-      (should (equal (auth-source-pass--get-attr "user" result)
-                     "someone")))
-    (auth-source-pass--should-have-message-containing "found: (\"foo\" \"subdir/foo\"")))
-
-(ert-deftest auth-source-pass-give-priority-to-desired-user-reversed ()
-  (auth-source-pass--with-store
-      '(("foo" ("secret" . "foo password") ("user" . "someone"))
-        ("subdir/foo" ("secret" . "subdir/foo password")))
-    (let ((result (auth-source-pass--find-match "foo" "someone" nil)))
-      (should (equal (auth-source-pass--get-attr "secret" result)
-                     "foo password")))
-    (auth-source-pass--should-have-message-containing "found: (\"foo\" \"subdir/foo\"")))
-
-(ert-deftest auth-source-pass-return-first-when-several-matches ()
-  (auth-source-pass--with-store
-      '(("foo" ("secret" . "foo password"))
-        ("subdir/foo" ("secret" . "subdir/foo password")))
-    (let ((result (auth-source-pass--find-match "foo" nil nil)))
-      (should (equal (auth-source-pass--get-attr "secret" result)
-                     "foo password")))
-    (auth-source-pass--should-have-message-containing "found: (\"foo\" \"subdir/foo\"")))
-
-(ert-deftest auth-source-pass-matching-entries-make-divansantana-happy ()
-  (auth-source-pass--with-store '(("host.com"))
-    (should (equal (auth-source-pass--matching-entries "smtp.host.com" "myusername@host.co.za" nil)
-                   '(nil nil nil nil nil ("host.com") nil nil nil)))))
-
-(ert-deftest auth-source-pass-find-host-without-port ()
-  (auth-source-pass--with-store
-      '(("host.com" ("secret" . "host.com password")))
-    (let ((result (auth-source-pass--find-match "host.com:8888" "someuser" nil)))
-      (should (equal (auth-source-pass--get-attr "secret" result)
-                     "host.com password")))))
-
-(ert-deftest auth-source-pass-matching-entries-host-with-port ()
-  (auth-source-pass--with-store '(("host.com:443"))
-    (should (equal (auth-source-pass--matching-entries "host.com" "someuser" "443")
-                   '(nil nil nil nil ("host.com:443") nil
-                         nil nil nil nil nil nil)))))
-
-(ert-deftest auth-source-pass-matching-entries-with-custom-port-separator ()
-  (let ((auth-source-pass-port-separator "#"))
-    (auth-source-pass--with-store '(("host.com#443"))
-      (should (equal (auth-source-pass--matching-entries "host.com" "someuser" "443")
-                     '(nil nil nil nil ("host.com#443") nil
-                           nil nil nil nil nil nil))))))
+    (should (auth-source-pass--includes-sorted-entries '("user@foo" "foo") "foo" "user")))
+  ;; with sub-domain
+  (auth-source-pass--with-store '(("bar.com") ("foo.bar.com"))
+    (should (auth-source-pass--includes-sorted-entries '("foo.bar.com" "bar.com") "foo.bar.com")))
+  ;; matching user in the entry data takes priority
+  (auth-source-pass--with-store '(("dir1/bar.com") ("dir2/bar.com" ("user" . "user")))
+    (should (auth-source-pass--includes-sorted-entries
+             '("dir2/bar.com" "dir1/bar.com")
+             "bar.com" "user")))
+  ;; same, but store is reversed
+  (auth-source-pass--with-store '(("dir2/bar.com" ("user" . "user")) ("dir1/bar.com"))
+    (should (auth-source-pass--includes-sorted-entries
+             '("dir2/bar.com" "dir1/bar.com")
+             "bar.com" "user"))))
 
 (defmacro auth-source-pass--with-store-find-foo (store &rest body)
   "Use STORE while executing BODY.  \"foo\" is the matched entry."
@@ -394,33 +370,6 @@ This function is intended to be set to `auth-source-debug`."
     (let ((result (auth-source-pass--build-result "foo" 1024 "anotheruser")))
       (should (equal (plist-get result :port) 512))
       (should (equal (plist-get result :user) "anuser")))))
-
-(ert-deftest auth-source-pass-build-result-passes-full-host-to-find-match ()
-  (let (passed-host)
-    (cl-letf (((symbol-function 'auth-source-pass--find-match)
-               (lambda (host _user _port)
-                 (setq passed-host host)
-                 nil)))
-      (auth-source-pass--build-result "https://user@host.com:123" nil nil)
-      (should (equal passed-host "https://user@host.com:123"))
-      (auth-source-pass--build-result "https://user@host.com" nil nil)
-      (should (equal passed-host "https://user@host.com"))
-      (auth-source-pass--build-result "user@host.com" nil nil)
-      (should (equal passed-host "user@host.com"))
-      (auth-source-pass--build-result "user@host.com:443" nil nil)
-      (should (equal passed-host "user@host.com:443")))))
-
-(ert-deftest auth-source-pass-only-return-entries-that-can-be-open ()
-  (auth-source-pass--with-store
-      '(("foo.site.com" ("secret" . "foo.site.com password"))
-        ("bar.site.com") ; An entry name with no data is invalid
-        ("mail/baz.site.com/scott" ("secret" . "mail/baz.site.com/scott password")))
-    (should (equal (auth-source-pass--find-match "foo.site.com" "someuser" nil)
-                   '(("secret" . "foo.site.com password"))))
-    (should (equal (auth-source-pass--find-match "bar.site.com" "someuser" nil)
-                   nil))
-    (should (equal (auth-source-pass--find-match "baz.site.com" "scott" nil)
-                   '(("secret" . "mail/baz.site.com/scott password"))))))
 
 (ert-deftest auth-source-pass-can-start-from-auth-source-search ()
   (auth-source-pass--with-store '(("gitlab.com" ("user" . "someone")))
