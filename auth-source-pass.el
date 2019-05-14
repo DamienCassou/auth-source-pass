@@ -248,9 +248,9 @@ The result is a list of lists of password-store entries, where
 each sublist contains entries that actually exist in the
 password-store matching one of the entry name formats that
 auth-source-pass expects, most specific to least specific."
-  (let* ((entries-lists
-           (mapcar #'cdr
-                   (auth-source-pass--accumulate-matches hostname user port)))
+  (let* ((entries-lists (mapcar
+                         #'cdr
+                         (auth-source-pass--accumulate-matches hostname user port)))
          (entries (apply #'cl-concatenate (cons 'list entries-lists))))
     (if entries
         (auth-source-pass--do-debug (format "found: %S" entries))
@@ -311,7 +311,8 @@ components, from longest to shortest."
 The resulting list is ordered from most specifc to least
 specific, with paths matching all of NAME, USER, & PORT first,
 then NAME & USER, then NAME & PORT, then just NAME."
-  (seq-mapcat #'identity
+  (seq-mapcat
+   #'identity
    (list
     (when (and user port)
       (list
