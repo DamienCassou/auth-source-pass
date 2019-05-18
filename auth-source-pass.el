@@ -258,32 +258,6 @@ matching USER."
                                            entries)))
           (if entries (throw 'auth-source-pass-break entries)))))))
 
-(defun auth-source-pass--matching-entries (hostname &optional user port)
-  "Return password-store entries matching HOSTNAME, USER, PORT.
-
-The result is a list of lists of password-store entries.  Each
-sublist contains the password-store entries whose names match a
-suffix in `auth-source-pass--generate-entry-suffixes'.  The
-result is ordered the same way as the suffixes."
-  (mapcar #'auth-source-pass--entries-matching-suffix
-          (auth-source-pass--generate-entry-suffixes hostname user port)))
-
-(defun auth-source-pass-match-entry-p (entry hostname &optional user port)
-  "Return non-nil iff an ENTRY matching the parameters is found in store.
-
-HOSTNAME, USER and PORT are passed unchanged to
-`auth-source-pass--matching-entries'."
-  (cl-find-if
-   (lambda (entries) (cl-find entry entries :test #'string=))
-   (auth-source-pass--matching-entries hostname user port)))
-
-(defun auth-source-pass-match-any-entry-p (hostname &optional user port)
-  "Return non-nil iff there is at least one entry matching the parameters.
-
-HOSTNAME, USER and PORT are passed unchanged to
-`auth-source-pass--matching-entries'."
-  (cl-find-if #'identity (auth-source-pass--matching-entries hostname user port)))
-
 (defun auth-source-pass--entries-matching-suffix (suffix)
   "Return the list of entries matching SUFFIX."
   (cl-remove-if-not
