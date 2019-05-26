@@ -144,8 +144,9 @@ The result is a list of lists of password-store entries.  Each
 sublist contains the password-store entries whose names match a
 suffix in `auth-source-pass--generate-entry-suffixes'.  The
 result is ordered the same way as the suffixes."
-  (mapcar #'auth-source-pass--entries-matching-suffix
-          (auth-source-pass--generate-entry-suffixes hostname user port)))
+  (let ((entries (auth-source-pass-entries)))
+    (mapcar (lambda (suffix) (auth-source-pass--entries-matching-suffix suffix entries))
+            (auth-source-pass--generate-entry-suffixes hostname user port))))
 
 (defun auth-source-pass-match-entry-p (entry hostname &optional user port)
   "Return non-nil iff an ENTRY matching the parameters is found in store.

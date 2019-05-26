@@ -240,31 +240,33 @@ matching USER."
 
 (defun auth-source-pass--best-matching-entries (hostname &optional user port)
   "Return the password-entries best matching HOSTNAME, USER and PORT."
-  (let ((suffixes (auth-source-pass--generate-entry-suffixes hostname user port)))
+  (let ((all-entries (auth-source-pass-entries))
+        (suffixes (auth-source-pass--generate-entry-suffixes hostname user port)))
     (auth-source-pass--do-debug "searching for entries matching hostname=%S, user=%S, port=%S"
                                 hostname (or user "") (or port ""))
     (auth-source-pass--do-debug "corresponding suffixes to search for: %S" suffixes)
     (catch 'auth-source-pass-break
       (dolist (suffix suffixes)
-        (let ((entries (auth-source-pass--entries-matching-suffix suffix)))
-          (pcase (length entries)
+        (let ((matching-entries (auth-source-pass--entries-matching-suffix suffix all-entries)))
+          (pcase (length matching-entries)
             (0 (auth-source-pass--do-debug "found no entries matching %S" suffix))
             (1 (auth-source-pass--do-debug "found 1 entry matching %S: %S"
                                            suffix
-                                           (car entries)))
+                                           (car matching-entries)))
             (_ (auth-source-pass--do-debug "found %s entries matching %S: %S"
-                                           (length entries)
+                                           (length matching-entries)
                                            suffix
-                                           entries)))
-          (if entries (throw 'auth-source-pass-break entries)))))))
+                                           matching-entries)))
+          (if matching-entries (throw 'auth-source-pass-break matching-entries)))))))
 
-(defun auth-source-pass--entries-matching-suffix (suffix)
-  "Return the list of entries matching SUFFIX."
+(defun auth-source-pass--entries-matching-suffix (suffix entries)
+  "Return entries matching SUFFIX.
+If ENTRIES is nil, use the result of calling `auth-source-pass-entries' instead."
   (cl-remove-if-not
    (lambda (entry) (string-match-p
                (format "\\(^\\|/\\)%s$" (regexp-quote suffix))
                entry))
-   (auth-source-pass-entries)))
+   (or entries (auth-source-pass-entries))))
 
 (defun auth-source-pass--generate-entry-suffixes (hostname user port)
   "Return a list of possible entry path suffixes in the password-store.
