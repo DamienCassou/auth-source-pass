@@ -221,25 +221,6 @@ If many matches are found, return the first one.  If no match is found,
 return nil.
 
 HOSTNAME should not contain any username or port number."
-  (let* ((entries (auth-source-pass--best-matching-entries hostname user port)))
-    (pcase (length entries)
-      (0 nil)
-      (1 (auth-source-pass-parse-entry (car entries)))
-      (_ (auth-source-pass--select-from-entries entries user)))))
-
-(defun auth-source-pass--select-from-entries (entries user)
-  "Return best matching password-store entry data from ENTRIES.
-
-If USER is non nil, give precedence to entries containing a user field
-matching USER."
-  (catch 'auth-source-pass-break
-    (dolist (entry entries)
-      (let ((entry-data (auth-source-pass-parse-entry entry)))
-        (when (or (not user) (equal (auth-source-pass--get-attr "user" entry-data) user))
-          (throw 'auth-source-pass-break entry-data))))))
-
-(defun auth-source-pass--best-matching-entries (hostname &optional user port)
-  "Return the password-entries best matching HOSTNAME, USER and PORT."
   (let ((all-entries (auth-source-pass-entries))
         (suffixes (auth-source-pass--generate-entry-suffixes hostname user port)))
     (auth-source-pass--do-debug "searching for entries matching hostname=%S, user=%S, port=%S"
@@ -247,7 +228,8 @@ matching USER."
     (auth-source-pass--do-debug "corresponding suffixes to search for: %S" suffixes)
     (catch 'auth-source-pass-break
       (dolist (suffix suffixes)
-        (let ((matching-entries (auth-source-pass--entries-matching-suffix suffix all-entries)))
+        (let* ((matching-entries (auth-source-pass--entries-matching-suffix suffix all-entries))
+               (best-entry-data (auth-source-pass--select-from-entries matching-entries user)))
           (pcase (length matching-entries)
             (0 (auth-source-pass--do-debug "found no entries matching %S" suffix))
             (1 (auth-source-pass--do-debug "found 1 entry matching %S: %S"
@@ -257,7 +239,22 @@ matching USER."
                                            (length matching-entries)
                                            suffix
                                            matching-entries)))
-          (if matching-entries (throw 'auth-source-pass-break matching-entries)))))))
+          (when best-entry-data
+            (throw 'auth-source-pass-break best-entry-data)))))))
+
+(defun auth-source-pass--select-from-entries (entries user)
+  "Return best matching password-store entry data from ENTRIES.
+
+If USER is non nil, give precedence to entries containing a user field
+matching USER."
+  (let (fallback)
+    (catch 'auth-source-pass-break
+      (dolist (entry entries fallback)
+        (let ((entry-data (auth-source-pass-parse-entry entry)))
+          (when (and entry-data (not fallback))
+            (setq fallback entry-data)
+            (when (or (not user) (equal (auth-source-pass--get-attr "user" entry-data) user))
+              (throw 'auth-source-pass-break entry-data))))))))
 
 (defun auth-source-pass--entries-matching-suffix (suffix entries)
   "Return entries matching SUFFIX.

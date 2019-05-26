@@ -276,18 +276,18 @@ HOSTNAME, USER and PORT are passed unchanged to
 
 (ert-deftest auth-source-pass-find-match-minimal-parsing ()
   (let ((store-contents
-         '(("baz")
-           ("baz:123")
-           ("baz/foo")
-           ("foo@baz")
-           ("baz:123/foo")
-           ("foo@baz:123")
-           ("bar.baz")
-           ("bar.baz:123")
-           ("bar.baz/foo")
-           ("foo@bar.baz")
-           ("bar.baz:123/foo")
-           ("foo@bar.baz:123"))))
+         '(("baz" ("key" . "val"))
+           ("baz:123" ("key" . "val"))
+           ("baz/foo" ("key" . "val"))
+           ("foo@baz" ("key" . "val"))
+           ("baz:123/foo" ("key" . "val"))
+           ("foo@baz:123" ("key" . "val"))
+           ("bar.baz" ("key" . "val"))
+           ("bar.baz:123" ("key" . "val"))
+           ("bar.baz/foo" ("key" . "val"))
+           ("foo@bar.baz" ("key" . "val"))
+           ("bar.baz:123/foo" ("key" . "val"))
+           ("foo@bar.baz:123" ("key" . "val")))))
     (auth-source-pass--with-store store-contents
       (auth-source-pass--find-match "bar.baz" "foo" "123")
       (should (equal auth-source-pass--parse-log '("foo@bar.baz:123"))))
@@ -303,7 +303,10 @@ HOSTNAME, USER and PORT are passed unchanged to
     (auth-source-pass--with-store store-contents
       (auth-source-pass--find-match "baz" nil nil)
       (should (equal auth-source-pass--parse-log '("baz"))))
-    (auth-source-pass--with-store '(("dir1/bar.com") ("dir2/bar.com") ("dir3/bar.com"))
+    (auth-source-pass--with-store
+        '(("dir1/bar.com" ("key" . "val"))
+          ("dir2/bar.com" ("key" . "val"))
+          ("dir3/bar.com" ("key" . "val")))
       (auth-source-pass--find-match "bar.com" nil nil)
       (should (= (length auth-source-pass--parse-log) 1)))))
 
