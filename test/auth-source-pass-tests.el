@@ -310,6 +310,18 @@ HOSTNAME, USER and PORT are passed unchanged to
       (auth-source-pass--find-match "bar.com" nil nil)
       (should (= (length auth-source-pass--parse-log) 1)))))
 
+(ert-deftest auth-source-pass--find-match-most-specific-suffix-is-invalid ()
+  (auth-source-pass--with-store
+   '(("foo@bar.com") ("bar.com" ("key" . "val")))
+   (should (consp (auth-source-pass--find-match "bar.com" "foo" nil)))
+   (should (equal auth-source-pass--parse-log '("bar.com" "foo@bar.com")))))
+
+(ert-deftest auth-source-pass--find-entry-in-same-suffix-group-is-invalid ()
+  (auth-source-pass--with-store
+   '(("a/bar.com") ("b/bar.com" ("key" . "val")))
+   (should (consp (auth-source-pass--find-match "bar.com" nil nil)))
+   (should (seq-set-equal-p auth-source-pass--parse-log '("b/bar.com" "a/bar.com")))))
+
 (ert-deftest auth-source-pass--find-match-return-parsed-data ()
   (auth-source-pass--with-store '(("bar.com" ("key" . "val")))
     (should (consp (auth-source-pass--find-match "bar.com" nil nil))))
