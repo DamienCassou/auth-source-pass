@@ -42,15 +42,18 @@
 (defgroup auth-source-pass nil
   "password-store integration within auth-source."
   :prefix "auth-source-pass-"
-  :group 'auth-source)
+  :group 'auth-source
+  :version "27.1")
 
-(defcustom auth-source-pass-path "~/.password-store"
-  "Path to the password-store folder."
-  :type 'directory)
+(defcustom auth-source-pass-filename "~/.password-store"
+  "Filename of the password-store folder."
+  :type 'directory
+  :version "27.1")
 
 (defcustom auth-source-pass-port-separator ":"
   "Separator string between host and port in entry filename."
-  :type 'string)
+  :type 'string
+  :version "27.1")
 
 (cl-defun auth-source-pass-search (&rest spec
                                          &key backend type host user port
@@ -129,17 +132,12 @@ key2: value2"
     (auth-source-pass--get-attr key data)))
 
 (defun auth-source-pass--get-attr (key entry-data)
-  "Return the value associated to KEY in data from an already parsed entry.
+  "Return value associated with KEY in an ENTRY-DATA.
 
 ENTRY-DATA is the data from a parsed password-store entry.
 The key used to retrieve the password is the symbol `secret'.
 
-The convention used as the format for a password-store file is
-the following (see http://www.passwordstore.org/#organization):
-
-secret
-key1: value1
-key2: value2"
+See `auth-source-pass-get'."
   (or (cdr (assoc key entry-data))
       (and (string= key "user")
            (cdr (assoc "username" entry-data)))))
@@ -149,7 +147,7 @@ key2: value2"
   (with-temp-buffer
     (insert-file-contents (expand-file-name
                            (format "%s.gpg" entry)
-                           auth-source-pass-path))
+                           auth-source-pass-filename))
     (buffer-substring-no-properties (point-min) (point-max))))
 
 (defun auth-source-pass-parse-entry (entry)
@@ -189,7 +187,7 @@ CONTENTS is the contents of a password-store formatted file."
 ;; in Emacs
 (defun auth-source-pass-entries ()
   "Return a list of all password store entries."
-  (let ((store-dir (expand-file-name auth-source-pass-path)))
+  (let ((store-dir (expand-file-name auth-source-pass-filename)))
     (mapcar
      (lambda (file) (file-name-sans-extension (file-relative-name file store-dir)))
      (directory-files-recursively store-dir "\\.gpg$"))))
@@ -283,9 +281,8 @@ This function takes a list of NAME-COMPONENTS, the strings
 separated by periods in the hostname, and returns a list of full
 domain names containing the trailing sequences of those
 components, from longest to shortest."
-  (when (> (length name-components) 0)
-    (cons (mapconcat 'identity name-components ".")
-          (auth-source-pass--domains (cdr name-components)))))
+  (cl-maplist (lambda (components) (mapconcat #'identity components "."))
+              name-components))
 
 (defun auth-source-pass--name-port-user-suffixes (name user port)
   "Return a list of possible path suffixes for NAME, USER, & PORT.

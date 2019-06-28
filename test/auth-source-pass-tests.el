@@ -276,18 +276,18 @@ HOSTNAME, USER and PORT are passed unchanged to
 
 (ert-deftest auth-source-pass-find-match-minimal-parsing ()
   (let ((store-contents
-         '(("baz" ("key" . "val"))
-           ("baz:123" ("key" . "val"))
-           ("baz/foo" ("key" . "val"))
-           ("foo@baz" ("key" . "val"))
-           ("baz:123/foo" ("key" . "val"))
-           ("foo@baz:123" ("key" . "val"))
-           ("bar.baz" ("key" . "val"))
-           ("bar.baz:123" ("key" . "val"))
-           ("bar.baz/foo" ("key" . "val"))
-           ("foo@bar.baz" ("key" . "val"))
-           ("bar.baz:123/foo" ("key" . "val"))
-           ("foo@bar.baz:123" ("key" . "val")))))
+         '(("baz" ("secret" . "baz password"))
+           ("baz:123" ("secret" . "baz:123 password"))
+           ("baz/foo" ("secret" . "baz/foo password"))
+           ("foo@baz" ("secret" . "foo@baz password"))
+           ("baz:123/foo" ("secret" . "baz:123/foo password"))
+           ("foo@baz:123" ("secret" . "foo@baz:123 password"))
+           ("bar.baz" ("secret" . "bar.baz password"))
+           ("bar.baz:123" ("secret" . "bar.baz:123 password"))
+           ("bar.baz/foo" ("secret" . "bar.baz/foo password"))
+           ("foo@bar.baz" ("secret" . "foo@bar.baz password"))
+           ("bar.baz:123/foo" ("secret" . "bar.baz:123/foo password"))
+           ("foo@bar.baz:123" ("secret" . "foo@bar.baz:123 password")))))
     (auth-source-pass--with-store store-contents
       (auth-source-pass--find-match "bar.baz" "foo" "123")
       (should (equal auth-source-pass--parse-log '("foo@bar.baz:123"))))
@@ -388,6 +388,24 @@ HOSTNAME, USER and PORT are passed unchanged to
     (should (auth-source-pass--includes-sorted-entries
              '("dir2/bar.com" "dir1/bar.com")
              "bar.com" "user"))))
+
+(ert-deftest auth-source-pass-all-supported-organizations ()
+  ;; test every possible entry to store this data: user=rms host=gnu.org port=22
+  (dolist (entry '(;; only host name
+                   "gnu.org"
+                   ;; hostname + user
+                   "gnu.org/rms" "rms@gnu.org"
+                   ;; hostname + port
+                   "gnu.org:22"
+                   ;; hostname + user + port
+                   "gnu.org:22/rms" "rms@gnu.org:22"
+                   ;; all of the above in a random folder
+                   "a/b/gnu.org"
+                   "a/b/gnu.org/rms" "a/b/rms@gnu.org"
+                   "a/b/gnu.org:22"
+                   "a/b/gnu.org:22/rms" "a/b/rms@gnu.org:22"))
+    (auth-source-pass--with-store `((,entry))
+      (should (auth-source-pass-match-entry-p entry "gnu.org" "rms" "22")))))
 
 (defmacro auth-source-pass--with-store-find-foo (store &rest body)
   "Use STORE while executing BODY.  \"foo\" is the matched entry."
