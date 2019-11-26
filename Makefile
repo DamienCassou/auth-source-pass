@@ -1,6 +1,6 @@
-ELPA_DEPENDENCIES=package-lint
+ELPA_DEPENDENCIES=package-lint let-alist
 
-ELPA_ARCHIVES=melpa
+ELPA_ARCHIVES=melpa gnu
 
 LINT_PACKAGE_LINT_FILES=auth-source-pass.el
 TEST_ERT_FILES=test/auth-source-pass-tests.el
@@ -15,7 +15,7 @@ makel.mk:
 		curl \
 		--fail --silent --show-error --insecure --location \
 		--retry 9 --retry-delay 9 \
-		-O https://gitlab.petton.fr/DamienCassou/makel/raw/v0.5.1/makel.mk; \
+		-O https://gitlab.petton.fr/DamienCassou/makel/raw/v0.5.3/makel.mk; \
 	fi
 
 # Include makel.mk if present
