@@ -272,16 +272,34 @@ If ENTRIES is nil, use the result of calling `auth-source-pass-entries' instead.
                entry))
    (or entries (auth-source-pass-entries))))
 
-(defun auth-source-pass--generate-entry-suffixes (hostname user port)
+(defun auth-source-pass--generate-entry-suffixes (hostname users ports)
   "Return a list of possible entry path suffixes in the password-store.
 
 Based on the supported filename patterns for HOSTNAME, USER, &
 PORT, return a list of possible suffixes for matching entries in
 the password-store."
   (let ((domains (auth-source-pass--domains (split-string hostname "\\."))))
-    (seq-mapcat (lambda (n)
-                  (auth-source-pass--name-port-user-suffixes n user port))
-                domains)))
+       (sort-list-by-length 
+        (apply #'append 
+               (seq-mapcat (lambda (domain)
+                                   (seq-mapcat (lambda (user)
+                                                       (seq-mapcat (lambda (port)
+                                                                           (list (when (and user port)
+                                                                                   (list
+                                                                                    (format "%s@%s%s%s" user domain auth-source-pass-port-separator port)
+                                                                                    (format "%s%s%s/%s" domain auth-source-pass-port-separator port user)))
+                                                                                 (when user
+                                                                                   (list
+                                                                                    (format "%s@%s" user domain)
+                                                                                    (format "%s/%s" domain user)))
+                                                                                 (when port
+                                                                                   (list
+                                                                                    (format "%s%s%s" domain auth-source-pass-port-separator port)))
+                                                                                 (list
+                                                                                  (format "%s" domain)))
+                                                                           ) (if (consp ports) ports (list ports)))
+                                                       ) (if (consp users) users (list users)))
+                                   ) (if (consp domains) domains (list domains)))))))
 
 (defun auth-source-pass--domains (name-components)
   "Return a list of possible domain names matching the hostname.
@@ -293,28 +311,13 @@ components, from longest to shortest."
   (cl-maplist (lambda (components) (mapconcat #'identity components "."))
               name-components))
 
-(defun auth-source-pass--name-port-user-suffixes (name user port)
-  "Return a list of possible path suffixes for NAME, USER, & PORT.
-
-The resulting list is ordered from most specific to least
-specific, with paths matching all of NAME, USER, & PORT first,
-then NAME & USER, then NAME & PORT, then just NAME."
-  (seq-mapcat
-   #'identity
-   (list
-    (when (and user port)
-      (list
-       (format "%s@%s%s%s" user name auth-source-pass-port-separator port)
-       (format "%s%s%s/%s" name auth-source-pass-port-separator port user)))
-    (when user
-      (list
-       (format "%s@%s" user name)
-       (format "%s/%s" name user)))
-    (when port
-      (list
-       (format "%s%s%s" name auth-source-pass-port-separator port)))
-    (list
-     (format "%s" name)))))
+(defun sort-list-by-length (list)
+  "Return alist of strings sorted by the length of elements.
+  
+This function takes a list of string."
+  (sort list
+        (lambda (a b)
+                (> (length a) (length b)))))
 
 (provide 'auth-source-pass)
 ;;; auth-source-pass.el ends here
