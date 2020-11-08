@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/DamienCassou/auth-password-store.svg?branch=master)](https://travis-ci.org/DamienCassou/auth-password-store)
+[![Build Status](https://travis-ci.org/DamienCassou/auth-source-pass.svg?branch=master)](https://travis-ci.org/DamienCassou/auth-password-store)
 
 # auth-source-pass (aka. auth-password-store)
 
@@ -19,8 +19,8 @@ This package has been included in Emacs 26. If that suits you, you can
 just start using it. Otherwise, install it from melpa.
 
 Regardless of the version you choose, please report issues to
-[auth-password-store's issue
-tracker](https://github.com/DamienCassou/auth-password-store/issues).
+[auth-source-pass's issue
+tracker](https://github.com/DamienCassou/auth-source-pass/issues).
 Please make sure to specify which version you use.
 
 
