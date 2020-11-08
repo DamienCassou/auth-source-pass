@@ -7,7 +7,7 @@
 ;;         Keith Amidon <camalot@picnicpark.org>
 ;; Version: 5.0.0
 ;; Package-Requires: ((emacs "27.1"))
-;; Url: https://github.com/DamienCassou/auth-password-store
+;; Url: https://github.com/DamienCassou/auth-source-pass
 ;; Created: 07 Jun 2015
 
 ;; This file is part of GNU Emacs.
@@ -34,8 +34,7 @@
 
 (require 'seq)
 (eval-when-compile (require 'subr-x))
-(eval-when-compile
-  (require 'cl-lib))
+(require 'cl-lib)
 (require 'auth-source)
 (require 'url-parse)
 
@@ -45,7 +44,8 @@
   :group 'auth-source
   :version "27.1")
 
-(defcustom auth-source-pass-filename (or (getenv "PASSWORD_STORE_DIR") "~/.password-store")
+(defcustom auth-source-pass-filename
+  (or (getenv "PASSWORD_STORE_DIR") "~/.password-store")
   "Filename of the password-store folder."
   :type 'directory
   :version "27.1")
@@ -190,7 +190,7 @@ CONTENTS is the contents of a password-store formatted file."
   (let ((store-dir (expand-file-name auth-source-pass-filename)))
     (mapcar
      (lambda (file) (file-name-sans-extension (file-relative-name file store-dir)))
-     (directory-files-recursively store-dir "\\.gpg$"))))
+     (directory-files-recursively store-dir "\\.gpg\\'"))))
 
 (defun auth-source-pass--find-match (hosts user port)
   "Return password-store entry data matching HOSTS, USER and PORT.
@@ -252,7 +252,7 @@ HOSTNAME should not contain any username or port number."
 (defun auth-source-pass--select-from-entries (entries user)
   "Return best matching password-store entry data from ENTRIES.
 
-If USER is non nil, give precedence to entries containing a user field
+If USER is non-nil, give precedence to entries containing a user field
 matching USER."
   (let (fallback)
     (catch 'auth-source-pass-break
@@ -275,12 +275,17 @@ If ENTRIES is nil, use the result of calling `auth-source-pass-entries' instead.
 (defun auth-source-pass--generate-entry-suffixes (hostname user port)
   "Return a list of possible entry path suffixes in the password-store.
 
-Based on the supported filename patterns for HOSTNAME, USER, &
+Based on the supported pathname patterns for HOSTNAME, USER, &
 PORT, return a list of possible suffixes for matching entries in
-the password-store."
+the password-store.
+
+PORT may be a list of ports."
   (let ((domains (auth-source-pass--domains (split-string hostname "\\."))))
-    (seq-mapcat (lambda (n)
-                  (auth-source-pass--name-port-user-suffixes n user port))
+    (seq-mapcat (lambda (domain)
+                  (seq-mapcat
+                   (lambda (p)
+                     (auth-source-pass--name-port-user-suffixes domain user p))
+                   (if (consp port) port (list port))))
                 domains)))
 
 (defun auth-source-pass--domains (name-components)
