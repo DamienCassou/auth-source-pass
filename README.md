@@ -74,7 +74,6 @@ by other Emacs packages dealing with pass:
 - [password-store](https://git.zx2c4.com/password-store/tree/contrib/emacs/password-store.el): password store (pass) support ;
 - [pass](https://github.com/NicolasPetton/pass): a major mode for
   pass ;
-- [helm-pass](https://github.com/jabranham/helm-pass): helm interface for pass.
 
 ## Contributing
 
